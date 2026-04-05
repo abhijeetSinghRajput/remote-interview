@@ -1,5 +1,5 @@
 import { sendError, sendSuccess } from "../utils/response.js";
-import Problem from "../models/problem.model.js";
+import Problem from "../models/Problem.model.js";
 
 export const getProblems = async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page) || 1);
