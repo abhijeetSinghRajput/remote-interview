@@ -1,16 +1,10 @@
-import {
-  ClerkProvider,
-  Show,
-  SignInButton,
-  SignUpButton,
-  UserButton,
-} from "@clerk/nextjs"
+import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google"
 
-import "./globals.css"
+import "@/app/styles/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { Providers } from "./providers";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -37,20 +31,11 @@ export default function RootLayout({
     >
       <body>
         <ClerkProvider>
-          <ThemeProvider>
-            <Show when="signed-out">
-              <SignInButton mode="modal">
-                <Button>Sign in</Button>
-              </SignInButton>
-              <SignUpButton>
-                <Button>Sign up</Button>
-              </SignUpButton>
-            </Show>
-            <Show when={"signed-in"}>
-              <UserButton/>
-            </Show>
-            {children}
-          </ThemeProvider>
+          <Providers>
+            <ThemeProvider>
+              {children}
+            </ThemeProvider>
+          </Providers>
         </ClerkProvider>
       </body>
     </html>

@@ -17,7 +17,7 @@ function optional(key, defaultValue=""){
 export const ENV = {
     PORT: optional("PORT", 5000),
     NODE_ENV: optional("NODE_ENV", "development"),
-    CLIENT_URL: optional("CLIENT_URL", "http://localhost:5173"),
+    CLIENT_URL: optional("CLIENT_URL", "http://localhost:3000"),
     DB_URL: required("DB_URL"),
     INNGEST_EVENT_KEY: required("INNGEST_EVENT_KEY"),
     INNGEST_SIGNING_KEY: required("INNGEST_SIGNING_KEY"),

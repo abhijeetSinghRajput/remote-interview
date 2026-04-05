@@ -1,6 +1,6 @@
 import {Router} from "express";
 import { protect } from "../middlewares/protect.middleware.js";
-import sessionController from "../controller/session.controller.js";
+import * as sessionController from "../controller/session.controller.js";
 
 const router = Router();
 

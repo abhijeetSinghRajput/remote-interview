@@ -1,4 +1,4 @@
-import { sendError, sendSuccess } from "../utils/response";
+import { sendError, sendSuccess } from "../utils/response.js";
 import Session from "../models/Session.model.js";
 import { v4 as uuidv4 } from "uuid";
 import { streamChat, streamClient } from "../libs/stream.js";
@@ -128,7 +128,7 @@ export const joinSession = async (req, res) => {
             return sendError(res, "Host cannot join as participant", 400);
         }
         if(session.participant) {
-            return sendError(res, "Session already has a full", 400);
+            return sendError(res, "Session already has a full", 409);
         }
         if (session.participant.toString() === user._id.toString()) {
             return sendError(res, "User already joined the session", 400);
@@ -193,7 +193,7 @@ export const endSession = async (req, res) => {
         // delete stream chat channel
         const channel = streamChat.channel("messaging", session.callId);
         await channel.delete();
-        
+
         return sendSuccess(res, session, "Session ended successfully");
     } catch (error) {
         console.error("Error ending session:", error);

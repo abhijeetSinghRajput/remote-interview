@@ -12,6 +12,7 @@ import { clerkMiddleware } from "@clerk/express";
 const app = express();
 
 app.use(helmet());
+console.log("Client URL:", ENV.CLIENT_URL);
 app.use(cors({ origin: ENV.CLIENT_URL, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

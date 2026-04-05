@@ -54,7 +54,6 @@ problemSchema.pre("save", function (next) {
 });
 
 
-problemSchema.index({ slug: 1 });
 problemSchema.index({ difficulty: 1 });
 problemSchema.index({ tags: 1 });
 
