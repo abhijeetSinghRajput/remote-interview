@@ -1,8 +1,12 @@
 import { connectDB } from "../config/db.js";
+import { ENV } from "../config/env.js";
 import User from "../models/User.model.js";
 import { Inngest } from "inngest";
 
-export const inngest = new Inngest({ id: "remote-interview" });
+export const inngest = new Inngest({
+  id: "remote-interview",
+  signingKey: ENV.INNGEST_SIGNING_KEY,
+});
 
 const syncUser = inngest.createFunction(
   {
