@@ -2,7 +2,32 @@
    Scope everything under .rich-text so it never leaks into other components.
    Apply with: <div className="rich-text"><EditorContent ... /></div>
 ──────────────────────────────────────────────────────────────────────────── */
+/* ── Rich Text / Markdown Styles ── */
+@import 'highlight.js/styles/github.css';
 
+/* next-themes uses .dark class on <html>, not prefers-color-scheme */
+.dark .rich-text .hljs                        { background: hsl(var(--muted)); color: #e6edf3; }
+.dark .rich-text .hljs-comment,
+.dark .rich-text .hljs-quote                  { color: #8b949e; }
+.dark .rich-text .hljs-keyword,
+.dark .rich-text .hljs-selector-tag,
+.dark .rich-text .hljs-deletion               { color: #ff7b72; }
+.dark .rich-text .hljs-string,
+.dark .rich-text .hljs-attr,
+.dark .rich-text .hljs-addition               { color: #a5d6ff; }
+.dark .rich-text .hljs-number,
+.dark .rich-text .hljs-literal,
+.dark .rich-text .hljs-type                   { color: #79c0ff; }
+.dark .rich-text .hljs-title,
+.dark .rich-text .hljs-section                { color: #d2a8ff; }
+.dark .rich-text .hljs-built_in,
+.dark .rich-text .hljs-name                   { color: #ffa657; }
+.dark .rich-text .hljs-variable,
+.dark .rich-text .hljs-template-variable      { color: #e6edf3; }
+.dark .rich-text .hljs-tag                    { color: #7ee787; }
+.dark .rich-text .hljs-attribute              { color: #79c0ff; }
+.dark .rich-text pre,
+.dark .rich-text code.hljs                    { background: hsl(var(--muted)); }
 .rich-text {
   color: var(--foreground);
   font-size: 0.9rem;
@@ -63,7 +88,6 @@
   background-color: oklch(from  var(--muted) l c h / 0.3);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 1rem 1.25rem;
   overflow-x: auto;
   margin: 1.25em 0;
   line-height: 1.6;
@@ -75,6 +99,7 @@
   padding: 0;
   font-size: inherit;
   color: inherit;
+  padding: 1rem 1.25rem;
   border-radius: 0;
 }
 

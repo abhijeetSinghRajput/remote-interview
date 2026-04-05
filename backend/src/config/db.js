@@ -12,7 +12,7 @@ export const connectDB = async () => {
         spinner.succeed("MongoDB connected");
     } catch (error) {
         spinner.fail("MongoDB connection failed");
-        console.log(error);
+        console.error(error);
         process.exit(1);
     }
 }

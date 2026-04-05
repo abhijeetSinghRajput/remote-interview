@@ -23,7 +23,6 @@ export const upsertStreamUser = async (user) => {
             email,
             image,
         });
-        console.log(`Stream user ${clerkId} upserted successfully.`);
     } catch (error) {
         console.error("Error upserting Stream user:", error);
     }
@@ -32,7 +31,6 @@ export const upsertStreamUser = async (user) => {
 export const deleteStreamUser = async (userId) => {
     try {
         await streamChat.deleteUser(userId, { mark_messages_deleted: true });
-        console.log(`Stream user ${userId} deleted successfully.`);
     } catch (error) {
         console.error("Error deleting Stream user:", error);
     }

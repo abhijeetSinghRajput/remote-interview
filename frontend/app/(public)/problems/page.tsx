@@ -26,23 +26,25 @@ import {
   IconChevronRight,
   IconChevronDown,
 } from "@tabler/icons-react";
+import { api } from "@/lib/api";
 
 // ───────────────── API ─────────────────
-async function fetchProblem(id: string): Promise<IProblem> {
-  const res = await fetch(`http://localhost:5000/api/problems/${id}`);
-  if (!res.ok) throw new Error("Problem not found");
-  const json = await res.json();
-  return json.data.problem;
+async function fetchProblemBySlug(slug: string): Promise<IProblem> {
+  try {
+    const res = await api.get(`/problems/${slug}`);
+    return res.data.data.problem;
+  } catch (error) {
+    throw new Error("Failed to fetch problem");
+  }
 }
 
 async function fetchProblems(params: any) {
-  const searchParams = new URLSearchParams(params);
-  const res = await fetch(
-    `http://localhost:5000/api/problems?${searchParams}`
-  );
-  if (!res.ok) throw new Error("Failed to fetch problems");
-  const json = await res.json();
-  return json.data;
+  try {
+    const res = await api.get("/problems", { params });
+    return res.data.data;
+  } catch (error) {
+    throw new Error("Failed to fetch problems");
+  }
 }
 
 // ───────────── Difficulty ─────────────
@@ -140,17 +142,15 @@ function HintsInline({ hints }: { hints: string[] }) {
 
 // ───────────── MAIN ─────────────
 export default function ProblemPanel({
-  problemId,
   slug,
   params,
 }: {
-  problemId: string;
   slug: string;
   params: any;
 }) {
   const { data: problem } = useQuery({
-    queryKey: ["problem", problemId],
-    queryFn: () => fetchProblem(problemId),
+    queryKey: ["problem", slug],
+    queryFn: () => fetchProblemBySlug(slug),
   });
 
   const { prev, next, goTo } = useProblemNavigation(slug, params);

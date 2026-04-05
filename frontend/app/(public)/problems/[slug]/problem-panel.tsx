@@ -1,33 +1,36 @@
-"use client";
-import "@/app/styles/rich-text.css";
+"use client";;
+import  "@/app/styles/rich-text.css";
 
-import { useEffect } from "react";
-import type { IProblem, ITestCase } from "@/types/model";
+import { useEffect, useState } from "react";
+import type { IProblem } from "@/types/model";
 import { useQuery } from "@tanstack/react-query";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import { marked } from "marked";
 
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { IconBulb, IconChevronDown, IconTag } from "@tabler/icons-react";
+import { IconChevronDown, IconTag } from "@tabler/icons-react";
+import rehypeHighlight from "rehype-highlight";
+import rehypeParse from "rehype-parse";
+import rehypeStringify from "rehype-stringify";
+import { unified } from "unified";
+import {api} from "@/lib/api";
+
 
 // ── API ──────────────────────────────────────────────────────────────────────
-async function fetchProblem(id: string): Promise<IProblem> {
-  const res = await fetch(`http://localhost:5000/api/problems/${id}`);
-  if (!res.ok) throw new Error("Problem not found");
-  const json = await res.json();
-  return json.data.problem;
+async function fetchProblem(slug: string): Promise<IProblem> {
+    try{
+        const res = await api.get(`/problems/${slug}`);
+        return res.data.data.problem;
+    } catch(error: any) {
+        throw new Error(error.response?.data?.message || `Problem ${slug} not found`);
+    }
 }
 
 // ── Difficulty config ─────────────────────────────────────────────────────
@@ -51,33 +54,33 @@ const DIFFICULTY_CONFIG = {
 
 // ── Tiptap read-only renderer ─────────────────────────────────────────────
 function RichTextRenderer({ content }: { content: string }) {
-  const editor = useEditor({
-    extensions: [StarterKit],
-    content: "",
-    editable: false,
-    editorProps: {
-      attributes: {
-        class: "prose prose-sm dark:prose-invert max-w-none focus:outline-none",
-      },
-    },
-    immediatelyRender: false,
-  });
+  const [html, setHtml] = useState("");
 
   useEffect(() => {
-    if (!editor || !content) return;
+    if (!content) return;
 
-    // content can be stored as HTML (from tiptap) or markdown
-    const isHTML = /<[a-z][\s\S]*>/i.test(content);
-    const html = isHTML ? content : marked.parse(content);
-    editor.commands.setContent(html);
-  }, [editor, content]);
+    async function process() {
+      const isHTML = /<[a-z][\s\S]*>/i.test(content);
+      let raw = isHTML ? content : String(await marked.parse(content));
 
-  if (!editor) return null;
+      const file = await unified()
+        .use(rehypeParse, { fragment: true })
+        .use(rehypeHighlight)
+        .use(rehypeStringify)
+        .process(raw);
+
+      setHtml(String(file));
+    }
+
+    process();
+  }, [content]);
+
+  if (!html) return null;
 
   return (
-    <EditorContent
-      editor={editor}
+    <div
       className="rich-text"
+      dangerouslySetInnerHTML={{ __html: html }}
     />
   );
 }
@@ -119,12 +122,12 @@ function HintsTab({ hints }: { hints: string[] }) {
   }
 
   return (
-    <div className="divide-y border-t">
+    <div className="divide-y">
       {hints.map((hint: string, i: number) => (
         <Collapsible key={i}>
           <CollapsibleTrigger asChild>
-            <button className="w-full flex items-center justify-between px-4 py-3 text-sm text-left">
-              <span>Hint {i + 1}</span>
+            <button className="w-full flex items-center justify-between py-3 text-sm text-left">
+              <span className="font-semibold">Hint {i + 1}</span>
               <IconChevronDown className="h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />
             </button>
           </CollapsibleTrigger>
@@ -138,7 +141,7 @@ function HintsTab({ hints }: { hints: string[] }) {
               data-[state=open]:animate-collapsible-down
             "
           >
-            <div className="px-4 py-3 text-sm text-muted-foreground">
+            <div className="py-3 text-sm text-muted-foreground">
               {hint}
             </div>
           </CollapsibleContent>
@@ -148,57 +151,12 @@ function HintsTab({ hints }: { hints: string[] }) {
   );
 }
 
-// ── Test cases tab ────────────────────────────────────────────────────────
-function TestCasesTab({ testCases }: { testCases: ITestCase[] }) {
-  const visible = testCases?.filter((tc: ITestCase) => !tc.isHidden) ?? [];
-
-  if (!visible.length) {
-    return (
-      <p className="text-sm text-muted-foreground p-5">No visible test cases.</p>
-    );
-  }
-
-  return (
-    <div className="space-y-3 p-5">
-      {visible.map((tc: ITestCase, i: number) => (
-        <div key={i} className="rounded-md border bg-muted/30 overflow-hidden">
-          <div className="px-3 py-2 border-b bg-muted/50">
-            <span className="text-xs font-medium text-muted-foreground">
-              Case {i + 1}
-            </span>
-          </div>
-          <div className="p-3 space-y-2">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Input</p>
-              <pre className="text-xs font-mono bg-background rounded p-2 border overflow-x-auto">
-                {tc.input}
-              </pre>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Output</p>
-              <pre className="text-xs font-mono bg-background rounded p-2 border overflow-x-auto">
-                {tc.output}
-              </pre>
-            </div>
-            {tc.explanation && (
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Explanation</p>
-                <p className="text-xs text-foreground">{tc.explanation}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // ── Main panel ────────────────────────────────────────────────────────────
-export default function ProblemPanel({ problemId }: { problemId: string }) {
+export default function ProblemPanel({ problemSlug }: { problemSlug: string }) {
   const { data: problem, isLoading, isError, error } = useQuery({
-    queryKey: ["problem", problemId],
-    queryFn: () => fetchProblem(problemId),
-    enabled: !!problemId,
+    queryKey: ["problem", problemSlug],
+    queryFn: () => fetchProblem(problemSlug),
+    enabled: !!problemSlug,
     staleTime: 5 * 60_000, // 5 min — problem content rarely changes
   });
 
@@ -223,7 +181,7 @@ export default function ProblemPanel({ problemId }: { problemId: string }) {
   return (
     <div className="flex bg-card flex-col h-full max-h-full overflow-y-auto rounded-lg overflow-hidden">
       {/* ── Problem header ── */}
-      <div className="px-5 pt-5 pb-4 shrink-0">
+      <div className="px-5 pt-5 pb-4 shrink-0 sticky top-0 bg-muted z-10">
         <div className="flex items-start justify-between gap-3 mb-3">
           <h2 className="text-base font-semibold leading-snug">{problem.title}</h2>
           {diffConfig && (
@@ -251,44 +209,10 @@ export default function ProblemPanel({ problemId }: { problemId: string }) {
 
       <Separator />
 
-      {/* ── Tabs ── */}
-      <Tabs defaultValue="description" className="flex flex-col flex-1 min-h-0">
-        <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-10 px-5 gap-1 shrink-0">
-          <TabsTrigger
-            value="description"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm h-full"
-          >
-            Description
-          </TabsTrigger>
-          <TabsTrigger
-            value="hints"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm h-full"
-          >
-            Hints
-            {problem.hints?.length > 0 && (
-              <span className="ml-1.5 text-xs text-muted-foreground">
-                {problem.hints.length}
-              </span>
-            )}
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Description tab */}
-        <TabsContent value="description" className="flex-1 min-h-0 mt-0">
-          <ScrollArea className="h-full">
-            <div className="px-5 py-4">
-              <RichTextRenderer content={problem.description} />
-            </div>
-          </ScrollArea>
-        </TabsContent>
-        
-        {/* Hints tab */}
-        <TabsContent value="hints" className="flex-1 min-h-0 mt-0">
-          <ScrollArea className="h-full">
+        <div className="px-5 py-4">
+            <RichTextRenderer content={problem.description} />
             <HintsTab hints={problem.hints} />
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
+        </div>
     </div>
   );
 }
