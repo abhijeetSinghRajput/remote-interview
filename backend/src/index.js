@@ -7,6 +7,7 @@ import { ENV } from "./config/env.js";
 import router from "./routes/index.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { connectDB } from "./config/db.js";
+import { clerkMiddleware } from "@clerk/express";
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan(ENV.NODE_ENV === "development" ? "dev" : "combined"));
 
+app.use(clerkMiddleware());
 app.use("/api", router);
 app.use(errorHandler);
 

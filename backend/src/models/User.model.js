@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
   image: {
     type: String,
   },
-  clearId: {
+  clerkId: {
     type: String,
     required: true,
     unique: true,
