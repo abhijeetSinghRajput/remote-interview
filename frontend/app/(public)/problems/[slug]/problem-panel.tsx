@@ -179,7 +179,7 @@ export default function ProblemPanel({ problemSlug }: { problemSlug: string }) {
   const diffConfig = DIFFICULTY_CONFIG[problem.difficulty as keyof typeof DIFFICULTY_CONFIG];
 
   return (
-    <div className="flex bg-card flex-col h-full max-h-full overflow-y-auto rounded-lg overflow-hidden">
+    <div className="flex bg-card flex-col h-full max-h-full overflow-y-auto rounded-none md:rounded-lg overflow-hidden">
       {/* ── Problem header ── */}
       <div className="px-5 pt-5 pb-4 shrink-0 sticky top-0 bg-muted z-10">
         <div className="flex items-start justify-between gap-3 mb-3">

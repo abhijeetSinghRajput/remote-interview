@@ -82,24 +82,30 @@
 .monaco-editor-background{
     background: var(--card) !important;
 }
+
 .rich-text pre {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.82rem;
-  background-color: oklch(from  var(--muted) l c h / 0.3);
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow-x: auto;
   margin: 1.25em 0;
   line-height: 1.6;
+
+  /* ← these two are the fix */
+  min-width: 0;
+  max-width: 100%;
 }
 
 .rich-text pre code {
-  background: none;
+  display: block;
+  background-color: oklch(from var(--muted) l c h / 0.3);
+  width: max-content;
+  white-space: pre;
   border: none;
-  padding: 0;
+  padding: 1rem 1.25rem;
   font-size: inherit;
   color: inherit;
-  padding: 1rem 1.25rem;
   border-radius: 0;
 }
 

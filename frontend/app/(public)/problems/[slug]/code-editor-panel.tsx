@@ -136,7 +136,7 @@ export default function CodeEditorPanel({ problemSlug, codeStubs, onRun, onSubmi
   const monacoTheme = resolvedTheme === "dark" ? "vs-dark" : "vs";
 
   return (
-    <div className="flex flex-col h-full bg-card rounded-lg overflow-hidden">
+    <div className="flex flex-col h-full bg-card rounded-none md:rounded-lg overflow-hidden">
 
       {/* Toolbar */}
       <div className="flex items-center justify-between px-3 py-2 border-b bg-muted shrink-0">

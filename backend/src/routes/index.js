@@ -10,7 +10,7 @@ const router = Router();
 
 router.use("/inngest", serve({ client: inngest, functions }));
 router.use("/chat", protect, chatRoute);
-router.use("/session", protect, sessionRoute);
+router.use("/sessions", protect, sessionRoute);
 router.use("/problems", problemRoute);
 
 export default router;

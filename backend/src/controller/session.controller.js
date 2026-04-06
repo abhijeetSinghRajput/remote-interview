@@ -2,6 +2,7 @@ import { sendError, sendSuccess } from "../utils/response.js";
 import Session from "../models/Session.model.js";
 import { v4 as uuidv4 } from "uuid";
 import { streamChat, streamClient } from "../libs/stream.js";
+import Problem from "../models/Problem.model.js";
 
 export const createSession = async (req, res) => {
   try {
