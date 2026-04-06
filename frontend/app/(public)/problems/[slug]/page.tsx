@@ -3,6 +3,7 @@ import ProblemPanel from "./problem-panel"
 import { useParams } from "next/navigation"
 import { Group, Panel, Separator } from "react-resizable-panels";
 import CodeEditorPanel from "./code-editor-panel";
+import type { IProblem } from "@/types/model";
 import OutputPanel from "./output-panel";
 import ProblemListSheet from "../problem-list-sheet";
 import { ModeToggle } from "@/components/ui/mode-toggle";
@@ -28,12 +29,25 @@ export default function ProblemDetailPage() {
         ? params.slug[0]
         : "";
 
+
   // fetch once here — sheet just receives props
   const { data: problems = [], isLoading: problemsLoading } = useQuery({
     queryKey: ["problems-list"],
     queryFn: fetchProblemList,
     staleTime: Infinity,
     gcTime: Infinity,
+  });
+
+  // fetch current problem for code stubs
+  const { data: currentProblem } = useQuery<IProblem>({
+    queryKey: ["problem", slug],
+    queryFn: async () => {
+      if (!slug) return undefined as any;
+      const { data } = await axios.get(`http://localhost:5000/api/problems/${slug}`);
+      return data.data.problem;
+    },
+    enabled: !!slug,
+    staleTime: 5 * 60_000,
   });
 
 const handleRun = async (code: string, language: string): Promise<void> => {
@@ -77,6 +91,7 @@ const handleSubmit = async (code: string, language: string): Promise<void> => {
               <div className="h-full rounded-lg border overflow-hidden">
                 <CodeEditorPanel
                   problemSlug={slug}
+                  codeStubs={currentProblem?.codeStubs}
                   onRun={handleRun}
                   onSubmit={handleSubmit}
                 />

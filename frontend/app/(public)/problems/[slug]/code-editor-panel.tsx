@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import { useTheme } from "next-themes";
 import {
@@ -56,18 +56,37 @@ const EDITOR_OPTIONS = {
 };
 
 // ── Main Code Editor Panel ───────────────────────────────────────────────
+import type { ICodeStub } from "@/types/model";
+
 interface CodeEditorPanelProps {
   problemSlug: string;
+  codeStubs?: ICodeStub[];
   onRun?: (code: string, language: string) => Promise<void>;
   onSubmit?: (code: string, language: string) => Promise<void>;
 }
 
-export default function CodeEditorPanel({ problemSlug, onRun, onSubmit }: CodeEditorPanelProps) {
+export default function CodeEditorPanel({ problemSlug, codeStubs, onRun, onSubmit }: CodeEditorPanelProps) {
   const { resolvedTheme } = useTheme();
   const editorRef = useRef(null);
 
+  // Build a map of language to starterCode from codeStubs
+  const stubMap = codeStubs?.reduce((acc, stub) => {
+    acc[stub.language] = stub.starterCode;
+    return acc;
+  }, {} as Record<string, string>);
+
   const [language, setLanguage] = useState<keyof typeof LANGUAGES>("javascript");
-  const [code, setCode] = useState(() => LANGUAGES[language].defaultCode);
+  const [code, setCode] = useState(() => stubMap?.["javascript"] ?? LANGUAGES["javascript"].defaultCode);
+
+  // Ensure code updates to fetched stub when available (on first load or slug change)
+  useEffect(() => {
+    // Only update if stubMap is available and code matches static default (prevents overwriting user edits)
+    const stub = stubMap?.[language];
+    const staticDefault = LANGUAGES[language].defaultCode;
+    if (stub && code === staticDefault) {
+      setCode(stub);
+    }
+  }, [stubMap, language]);
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -83,13 +102,15 @@ export default function CodeEditorPanel({ problemSlug, onRun, onSubmit }: CodeEd
     setCode(value ?? "");
   }, []);
 
+
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang as keyof typeof LANGUAGES);
-    setCode(LANGUAGES[lang as keyof typeof LANGUAGES].defaultCode);
+    // Use stub if available, else fallback to static default
+    setCode(stubMap?.[lang] ?? LANGUAGES[lang as keyof typeof LANGUAGES].defaultCode);
   };
 
   const handleReset = () => {
-    setCode(LANGUAGES[language].defaultCode);
+    setCode(stubMap?.[language] ?? LANGUAGES[language].defaultCode);
   };
 
   const handleRun = async () => {
