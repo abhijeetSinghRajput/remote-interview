@@ -198,8 +198,10 @@ export default function HomePage() {
                   </Link>
                 </Button>
               </Show>
-              <Button variant="outline" size="lg" className="h-12 px-6">
+              <Button asChild variant="outline" size="lg" className="h-12 px-6">
+                <Link href="/problems">
                 Explore
+                </Link>
               </Button>
             </div>
           </div>
