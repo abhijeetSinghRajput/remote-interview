@@ -9,11 +9,11 @@ import ProblemListSheet from "../problem-list-sheet";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { useQuery } from "@tanstack/react-query";
 import { UserButton } from "@clerk/nextjs";
-import axios from "axios";
+import { api } from "@/lib/api";
 
 // ── API ───────────────────────────────────────────────────────────────────
 async function fetchProblemList() {
-  const { data } = await axios.get("/problems", {
+  const { data } = await api.get("/problems", {
     params: { limit: 50 },
   });
   return data.data.problems;
@@ -43,7 +43,7 @@ export default function ProblemDetailPage() {
     queryKey: ["problem", slug],
     queryFn: async () => {
       if (!slug) return undefined as any;
-      const { data } = await axios.get(`/problems/${slug}`);
+      const { data } = await api.get(`/problems/${slug}`);
       return data.data.problem;
     },
     enabled: !!slug,
