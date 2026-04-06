@@ -47,3 +47,9 @@ export interface ISession {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export type ISessionDetail = Omit<ISession, "host" | "problem"> & {
+  host: IUser;
+  problem: IProblem;
+  participant?: IUser;
+};

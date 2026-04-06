@@ -1,9 +1,10 @@
 "use client";
+import type { IProblem } from "@/types/model";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,51 +29,10 @@ import {
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-
-// ── Types ─────────────────────────────────────────────────────────────────
-interface Session {
-  _id: string;
-  callId: string;
-  status: "active" | "completed";
-  host: { name: string; email: string; image: string; clerkId: string };
-  participant?: { name: string; image: string };
-  problem: { title: string; slug: string; difficulty: string; tags?: string[] };
-  createdAt: string;
-}
-
-interface Problem {
-  _id: string;
-  title: string;
-  slug: string;
-  difficulty: "easy" | "medium" | "hard";
-  tags: string[];
-}
-
-// ── API fns ───────────────────────────────────────────────────────────────
-const fetchActiveSessions = async (): Promise<Session[]> => {
-  const { data } = await api.get("/sessions/active");
-  return data.data;
-};
-
-const fetchRecentSessions = async (): Promise<Session[]> => {
-  const { data } = await api.get("/sessions/my-recent");
-  return data.data;
-};
-
-const fetchProblems = async (): Promise<Problem[]> => {
-  const { data } = await api.get("/problems", { params: { limit: 50 } });
-  return data.data.problems;
-};
-
-const createSession = async (problemId: string) => {
-  const { data } = await api.post("/sessions", { problemId });
-  return data.data;
-};
-
-const joinSession = async (id: string) => {
-  const { data } = await api.post(`/sessions/${id}/join`);
-  return data.data;
-};
+import { toast } from "sonner";
+import { createSession, getActiveSession, getMyRecentSessions, joinSession } from "@/services/session.service";
+import { fetchProblemList } from "@/services/problem.service";
+import { ISession } from "@/types/model";
 
 // ── Difficulty config ─────────────────────────────────────────────────────
 const DIFF = {
@@ -127,7 +87,7 @@ function ActiveSessionCard({
   onJoin,
   isJoining,
 }: {
-  session: Session;
+  session: ISession;
   onJoin: (id: string) => void;
   isJoining: boolean;
 }) {
@@ -136,21 +96,30 @@ function ActiveSessionCard({
   return (
     <div className="group rounded-xl border border-border bg-card hover:border-primary/40 transition-all duration-200 overflow-hidden">
       {/* top accent */}
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      <div className="h-px w-full bg-linear-to-r from-transparent via-primary/40 to-transparent" />
 
       <div className="p-5">
         {/* header row */}
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <img
-              src={session.host.image}
-              alt={session.host.name}
-              className="h-7 w-7 rounded-full ring-1 ring-border shrink-0"
-            />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold truncate">{session.host.name}</p>
-              <p className="text-xs text-muted-foreground font-mono">host</p>
-            </div>
+            {typeof session.host === "object" && session.host !== null ? (
+              <>
+                <img
+                  src={session.host.image}
+                  alt={session.host.name}
+                  className="h-7 w-7 rounded-full ring-1 ring-border shrink-0"
+                />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">{session.host.name}</p>
+                  <p className="text-xs text-muted-foreground font-mono">host</p>
+                </div>
+              </>
+            ) : (
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate">Host</p>
+                <p className="text-xs text-muted-foreground font-mono">host</p>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -160,7 +129,9 @@ function ActiveSessionCard({
 
         {/* problem */}
         <p className="text-sm font-semibold mb-2 leading-snug line-clamp-1">
-          {session.problem.title}
+          {typeof session.problem === "object" && session.problem !== null
+            ? session.problem.title
+            : "Problem"}
         </p>
 
         {/* tags row */}
@@ -169,10 +140,14 @@ function ActiveSessionCard({
             variant="outline"
             className={cn(
               "text-xs font-mono border",
-              DIFF[session.problem.difficulty as keyof typeof DIFF]
+              typeof session.problem === "object" && session.problem !== null
+                ? DIFF[session.problem.difficulty as keyof typeof DIFF]
+                : undefined
             )}
           >
-            {session.problem.difficulty}
+            {typeof session.problem === "object" && session.problem !== null
+              ? session.problem.difficulty
+              : ""}
           </Badge>
           <span className="text-xs text-muted-foreground font-mono">
             {spotsLeft === 0 ? (
@@ -186,7 +161,9 @@ function ActiveSessionCard({
         {/* footer */}
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground font-mono">
-            {formatDistanceToNow(new Date(session.createdAt), { addSuffix: true })}
+            {session.createdAt
+              ? formatDistanceToNow(new Date(session.createdAt), { addSuffix: true })
+              : ""}
           </span>
           <Button
             size="sm"
@@ -209,7 +186,7 @@ function ActiveSessionCard({
 }
 
 // ── Recent Session Row ────────────────────────────────────────────────────
-function RecentSessionRow({ session }: { session: Session }) {
+function RecentSessionRow({ session }: { session: ISession }) {
   const router = useRouter();
 
   return (
@@ -221,19 +198,25 @@ function RecentSessionRow({ session }: { session: Session }) {
         <IconCode className="h-3.5 w-3.5 text-muted-foreground" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{session.problem.title}</p>
+        <p className="text-sm font-medium truncate">{typeof session.problem === "object" && session.problem !== null ? session.problem.title : "Problem"}</p>
         <p className="text-xs text-muted-foreground font-mono">
-          {formatDistanceToNow(new Date(session.createdAt), { addSuffix: true })}
+          {session.createdAt
+            ? formatDistanceToNow(new Date(session.createdAt), { addSuffix: true })
+            : ""}
         </p>
       </div>
       <Badge
         variant="outline"
         className={cn(
           "text-xs font-mono border shrink-0",
-          DIFF[session.problem.difficulty as keyof typeof DIFF]
+          typeof session.problem === "object" && session.problem !== null
+            ? DIFF[session.problem.difficulty as keyof typeof DIFF]
+            : undefined
         )}
       >
-        {session.problem.difficulty}
+        {typeof session.problem === "object" && session.problem !== null
+          ? session.problem.difficulty
+          : ""}
       </Badge>
       <IconArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
     </button>
@@ -257,12 +240,12 @@ function CreateSessionDialog({
 
   const { data: problems = [], isLoading } = useQuery({
     queryKey: ["problems-list"],
-    queryFn: fetchProblems,
+    queryFn: () => fetchProblemList({ page: 1, limit: 10 }),
     staleTime: Infinity,
     enabled: open,
   });
 
-  const filtered = problems.filter((p) =>
+  const filtered = problems.filter((p: IProblem) =>
     p.title.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -305,7 +288,7 @@ function CreateSessionDialog({
             </div>
           ) : (
             <div className="p-2 space-y-0.5">
-              {filtered.map((p) => (
+              {filtered.map((p: IProblem) => (
                 <button
                   key={p._id}
                   onClick={() => setSelected(p._id)}
@@ -328,7 +311,7 @@ function CreateSessionDialog({
                     variant="outline"
                     className={cn(
                       "text-xs font-mono border shrink-0",
-                      DIFF[p.difficulty]
+                      DIFF[p.difficulty as keyof typeof DIFF]
                     )}
                   >
                     {p.difficulty}
@@ -343,7 +326,7 @@ function CreateSessionDialog({
         <div className="px-5 py-4 border-t flex items-center justify-between gap-3">
           <span className="text-xs text-muted-foreground font-mono">
             {selected
-              ? `Selected: ${problems.find((p) => p._id === selected)?.title}`
+              ? `Selected: ${problems.find((p: IProblem) => p._id === selected)?.title}`
               : "No problem selected"}
           </span>
           <Button
@@ -367,6 +350,7 @@ function CreateSessionDialog({
 
 // ── Dashboard Page ────────────────────────────────────────────────────────
 export default function DashboardPage() {
+  const {user, isLoaded} = useUser();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
@@ -374,13 +358,13 @@ export default function DashboardPage() {
 
   const { data: activeSessions = [], isLoading: activeLoading } = useQuery({
     queryKey: ["active-sessions"],
-    queryFn: fetchActiveSessions,
+    queryFn: () => getActiveSession({ page: 1, limit: 20 }),
     refetchInterval: 15_000, // poll every 15s
   });
 
   const { data: recentSessions = [], isLoading: recentLoading } = useQuery({
     queryKey: ["recent-sessions"],
-    queryFn: fetchRecentSessions,
+    queryFn: () => getMyRecentSessions({ page: 1, limit: 20 }),
   });
 
   const createMutation = useMutation({
@@ -390,6 +374,12 @@ export default function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: ["active-sessions"] });
       router.push(`/session/${session._id}`);
     },
+    onError: (error: any) => {
+    const message =
+      error?.response?.data?.message || "Failed to create session";
+
+      toast.error(message);
+    },
   });
 
   const joinMutation = useMutation({
@@ -398,10 +388,29 @@ export default function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: ["active-sessions"] });
       router.push(`/session/${id}`);
     },
+    onError: (error: any) => {
+    const message =
+      error?.response?.data?.message || "Something went wrong";
+
+      toast.error(message);
+    },
     onSettled: () => setJoiningId(null),
   });
 
+  if(!isLoaded) {
+    return (<div className="h-dvh flex items-center justify-center">
+      <IconLoader className="h-8 w-8 animate-spin text-muted-foreground" />
+    </div>)
+  }
+
   const handleJoin = (id: string) => {
+    // Find the session object by id
+    const session = activeSessions.find((s:ISession) => s._id === id);
+    const isHost = session?.host?.clerkId === user?.id;
+    if (isHost) {
+      router.push(`/session/${id}`);
+      return;
+    }
     setJoiningId(id);
     joinMutation.mutate(id);
   };
@@ -430,7 +439,7 @@ export default function DashboardPage() {
       value: activeLoading
         ? "—"
         : activeSessions.reduce(
-            (acc, s) => acc + 1 + (s.participant ? 1 : 0),
+            (acc: number, s: ISession) => acc + 1 + (s.participant ? 1 : 0),
             0
           ),
       icon: IconUsers,
@@ -533,7 +542,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {activeSessions.map((s) => (
+                {activeSessions.map((s: ISession) => (
                   <ActiveSessionCard
                     key={s._id}
                     session={s}
@@ -573,7 +582,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="p-2">
-                  {recentSessions.slice(0, 8).map((s) => (
+                  {recentSessions.slice(0, 8).map((s: ISession) => (
                     <RecentSessionRow key={s._id} session={s} />
                   ))}
                 </div>

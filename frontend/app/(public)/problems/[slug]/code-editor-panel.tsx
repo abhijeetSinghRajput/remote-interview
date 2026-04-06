@@ -59,13 +59,12 @@ const EDITOR_OPTIONS = {
 import type { ICodeStub } from "@/types/model";
 
 interface CodeEditorPanelProps {
-  problemSlug: string;
   codeStubs?: ICodeStub[];
   onRun?: (code: string, language: string) => Promise<void>;
   onSubmit?: (code: string, language: string) => Promise<void>;
 }
 
-export default function CodeEditorPanel({ problemSlug, codeStubs, onRun, onSubmit }: CodeEditorPanelProps) {
+export default function CodeEditorPanel({ codeStubs, onRun, onSubmit }: CodeEditorPanelProps) {
   const { resolvedTheme } = useTheme();
   const editorRef = useRef(null);
 

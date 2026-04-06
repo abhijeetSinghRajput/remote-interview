@@ -37,6 +37,7 @@ export const createSession = async (req, res) => {
     // create stream chat channel for this session
     const channel = streamChat.channel("messaging", callId, {
       name: `${problem.title} Session`,
+      created_by_id: user.clerkId,
       members: [user.clerkId],
     });
     await channel.create();
@@ -75,7 +76,7 @@ export const getMyRecentSessions = async (req, res) => {
     const skip = (page - 1) * limit;
     const sessions = await Session.find({
       status: "completed",
-      $or: [{ host: user._id }, { participants: user._id }],
+      $or: [{ host: user._id }, { participant: user._id }],
     })
       .populate("problem", "title difficulty")
       .sort({ createdAt: -1 })
@@ -94,7 +95,7 @@ export const getSessionById = async (req, res) => {
     const { id } = req.params;
     const session = await Session.findById(id)
       .populate("host", "name email image clerkId")
-      .populate("participants", "name email image clerkId")
+      .populate("participant", "name email image clerkId")
       .populate(
         "problem",
         "title slug description difficulty tags testCases codeStubs hints",

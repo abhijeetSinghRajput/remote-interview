@@ -101,6 +101,7 @@
   display: block;
   background-color: oklch(from var(--muted) l c h / 0.3);
   width: max-content;
+  min-width: 100%;
   white-space: pre;
   border: none;
   padding: 1rem 1.25rem;

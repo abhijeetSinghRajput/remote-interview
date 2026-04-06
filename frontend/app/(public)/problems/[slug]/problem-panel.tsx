@@ -1,4 +1,4 @@
-"use client";;
+"use client";
 import  "@/app/styles/rich-text.css";
 
 import { useEffect, useState } from "react";
@@ -20,18 +20,6 @@ import rehypeHighlight from "rehype-highlight";
 import rehypeParse from "rehype-parse";
 import rehypeStringify from "rehype-stringify";
 import { unified } from "unified";
-import {api} from "@/lib/api";
-
-
-// ── API ──────────────────────────────────────────────────────────────────────
-async function fetchProblem(slug: string): Promise<IProblem> {
-    try{
-        const res = await api.get(`/problems/${slug}`);
-        return res.data.data.problem;
-    } catch(error: any) {
-        throw new Error(error.response?.data?.message || `Problem ${slug} not found`);
-    }
-}
 
 // ── Difficulty config ─────────────────────────────────────────────────────
 const DIFFICULTY_CONFIG = {
@@ -152,14 +140,19 @@ function HintsTab({ hints }: { hints: string[] }) {
 }
 
 // ── Main panel ────────────────────────────────────────────────────────────
-export default function ProblemPanel({ problemSlug }: { problemSlug: string }) {
-  const { data: problem, isLoading, isError, error } = useQuery({
-    queryKey: ["problem", problemSlug],
-    queryFn: () => fetchProblem(problemSlug),
-    enabled: !!problemSlug,
-    staleTime: 5 * 60_000, // 5 min — problem content rarely changes
-  });
+interface ProblemPanelProps {
+  problem: IProblem | null;
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+}
 
+export default function ProblemPanel({ 
+  problem, 
+  isLoading, 
+  isError, 
+  error 
+}: ProblemPanelProps) {
   if (isLoading) return <PanelSkeleton />;
 
   if (isError) {

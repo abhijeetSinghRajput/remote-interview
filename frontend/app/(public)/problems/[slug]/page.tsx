@@ -1,4 +1,4 @@
-"use client";
+"use client";;
 import ProblemPanel from "./problem-panel";
 import { useParams } from "next/navigation";
 import { Group, Panel, Separator } from "react-resizable-panels";
@@ -6,22 +6,16 @@ import CodeEditorPanel from "./code-editor-panel";
 import type { IProblem } from "@/types/model";
 import OutputPanel from "./output-panel";
 import ProblemListSheet from "../problem-list-sheet";
+import type { ProblemListItem } from "../problem-list-sheet";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { useQuery } from "@tanstack/react-query";
 import { UserButton } from "@clerk/nextjs";
-import { api } from "@/lib/api";
 import { useState } from "react";
 import { IconFileText, IconCode, IconTerminal2 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { fetchProblemDetail, fetchProblemList } from "@/services/problem.service";
 
-// ── API ───────────────────────────────────────────────────────────────────
-async function fetchProblemList() {
-  const { data } = await api.get("/problems", {
-    params: { limit: 50 },
-  });
-  return data.data.problems;
-}
 
 // ── Mobile tab config ─────────────────────────────────────────────────────
 const TABS = [
@@ -47,22 +41,19 @@ export default function ProblemDetailPage() {
   // fetch once here — sheet just receives props
   const { data: problems = [], isLoading: problemsLoading } = useQuery({
     queryKey: ["problems-list"],
-    queryFn: fetchProblemList,
+    queryFn: () => fetchProblemList({}),
     staleTime: Infinity,
     gcTime: Infinity,
   });
 
   // fetch current problem for code stubs
-  const { data: currentProblem } = useQuery<IProblem>({
+  const { data: currentProblem , isLoading, isError, error} = useQuery<IProblem>({
     queryKey: ["problem", slug],
-    queryFn: async () => {
-      if (!slug) return undefined as any;
-      const { data } = await api.get(`/problems/${slug}`);
-      return data.data.problem;
-    },
+    queryFn: () => fetchProblemDetail(slug),
     enabled: !!slug,
     staleTime: 5 * 60_000,
   });
+  
 
   const handleRun = async (code: string, language: string): Promise<void> => {
     console.log("Run:", { code, language });
@@ -87,7 +78,7 @@ export default function ProblemDetailPage() {
           </div>
           <ProblemListSheet
             currentSlug={slug}
-            problems={problems}
+            problems={problems as ProblemListItem[]}
             isLoading={problemsLoading}
           />
         </div>
@@ -102,7 +93,7 @@ export default function ProblemDetailPage() {
       <Group orientation="horizontal" className="flex-1 p-2 gap-2">
         <Panel defaultSize={40} minSize={30}>
           <div className="h-full rounded-lg border overflow-hidden">
-            <ProblemPanel problemSlug={slug} />
+            <ProblemPanel problem={currentProblem ?? null} isLoading={isLoading} isError={isError} error={error} />
           </div>
         </Panel>
 
@@ -113,7 +104,6 @@ export default function ProblemDetailPage() {
             <Panel defaultSize={65} minSize={40}>
               <div className="h-full rounded-lg border overflow-hidden">
                 <CodeEditorPanel
-                  problemSlug={slug}
                   codeStubs={currentProblem?.codeStubs}
                   onRun={handleRun}
                   onSubmit={handleSubmit}
@@ -139,13 +129,17 @@ export default function ProblemDetailPage() {
         <div className="flex-1 min-h-0 overflow-hidden">
           {/* Problem tab */}
           <div className={cn("h-full overflow-hidden", activeTab !== "problem" && "hidden")}>
-            <ProblemPanel problemSlug={slug} />
+            <ProblemPanel
+              problem={currentProblem ?? null}
+              isLoading={isLoading}
+              isError={isError}
+              error={error}
+            />
           </div>
 
           {/* Code tab */}
           <div className={cn("h-full overflow-hidden", activeTab !== "code" && "hidden")}>
             <CodeEditorPanel
-              problemSlug={slug}
               codeStubs={currentProblem?.codeStubs}
               onRun={handleRun}
               onSubmit={handleSubmit}

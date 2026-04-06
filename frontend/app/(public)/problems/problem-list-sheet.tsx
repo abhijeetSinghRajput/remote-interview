@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { IconSearch, IconLayoutList } from "@tabler/icons-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────
-interface ProblemListItem {
+export interface ProblemListItem {
   slug: string;
   title: string;
   difficulty: "easy" | "medium" | "hard";
