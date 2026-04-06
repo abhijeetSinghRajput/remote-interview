@@ -13,7 +13,7 @@ import axios from "axios";
 
 // ── API ───────────────────────────────────────────────────────────────────
 async function fetchProblemList() {
-  const { data } = await axios.get("http://localhost:5000/api/problems", {
+  const { data } = await axios.get("/problems", {
     params: { limit: 50 },
   });
   return data.data.problems;
@@ -43,7 +43,7 @@ export default function ProblemDetailPage() {
     queryKey: ["problem", slug],
     queryFn: async () => {
       if (!slug) return undefined as any;
-      const { data } = await axios.get(`http://localhost:5000/api/problems/${slug}`);
+      const { data } = await axios.get(`/problems/${slug}`);
       return data.data.problem;
     },
     enabled: !!slug,
