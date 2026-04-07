@@ -128,9 +128,9 @@ function CreateSessionDialog({
             onClick={() => selected && onCreate(selected)}
           >
             {isCreating ? (
-              <IconLoader className="h-3.5 w-3.5 animate-spin" />
+              <IconLoader className="size-3.5 animate-spin" />
             ) : (
-              <IconPlus className="h-3.5 w-3.5" />
+              <IconPlus className="size-3.5" />
             )}
             Create Session
           </Button>

@@ -16,8 +16,6 @@ const DIFF = {
 
 function ActiveSessionCard({
   session,
-  onJoin,
-  isJoining,
 }: {
   session: ISession;
   onJoin: (id: string) => void;

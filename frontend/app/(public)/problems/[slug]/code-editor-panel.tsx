@@ -154,19 +154,19 @@ export default function CodeEditorPanel({ codeStubs, onRun, onSubmit }: CodeEdit
 
           {/* Reset */}
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleReset} title="Reset to starter code">
-            <IconRotate className="h-3.5 w-3.5" />
+            <IconRotate className="size-3.5" />
           </Button>
         </div>
 
         {/* Run / Submit */}
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={handleRun} disabled={isRunning || isSubmitting}>
-            {isRunning ? <IconLoader className="h-3.5 w-3.5 animate-spin" /> : <IconPlayerPlayFilled className="h-3.5 w-3.5" />}
+            {isRunning ? <IconLoader className="size-3.5 animate-spin" /> : <IconPlayerPlayFilled className="size-3.5" />}
             Run
           </Button>
 
           <Button size="sm" className="h-7 text-xs gap-1.5" onClick={handleSubmit} disabled={isRunning || isSubmitting}>
-            {isSubmitting ? <IconLoader className="h-3.5 w-3.5 animate-spin" /> : <IconSend className="h-3.5 w-3.5" />}
+            {isSubmitting ? <IconLoader className="size-3.5 animate-spin" /> : <IconSend className="size-3.5" />}
             Submit
           </Button>
         </div>

@@ -67,7 +67,7 @@ export default function DashboardPage() {
 
   if (!isLoaded) {
     return (<div className="h-dvh flex items-center justify-center">
-      <IconLoader className="h-8 w-8 animate-spin text-muted-foreground" />
+      <IconLoader className="size-5 animate-spin text-muted-foreground" />
     </div>)
   }
 

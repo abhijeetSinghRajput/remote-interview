@@ -57,6 +57,7 @@ export const getActiveSession = async (req, res) => {
 
     const sessions = await Session.find({ status: "active" })
       .populate("host", "name email image clerkId")
+      .populate("participant", "name email image clerkId")
       .populate("problem", "title slug difficulty tags")
       .skip(skip)
       .limit(limit);
