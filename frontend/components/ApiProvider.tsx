@@ -23,8 +23,6 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
 
       const token = await getToken();
 
-      console.log("clerk token:", token);
-
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       } else {

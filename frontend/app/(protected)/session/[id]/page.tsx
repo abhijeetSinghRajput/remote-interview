@@ -5,15 +5,16 @@ import ProblemPanel from "@/app/(public)/problems/[slug]/problem-panel";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { cn } from "@/lib/utils";
-import { getSessionById } from "@/services/session.service";
+import { getSessionById, joinSession } from "@/services/session.service";
 import { ISessionDetail } from "@/types/model";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { IconArrowRight, IconCode, IconFileText, IconLoader, IconMessageCircle, IconTerminal2, IconVideo } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
+import { toast } from "sonner";
 
 const TABS = [
   { id: "problem", label: "Problem", icon: IconFileText },
@@ -45,16 +46,36 @@ export default function SessionDetailPage() {
     staleTime: 5 * 60_000,
   });
 
+  const joinSessionMutation = useMutation({
+    mutationKey: ["join-session", sessionId],
+    mutationFn: (id: string) => joinSession(id),
+    onSuccess: () => toast.success("Joined session successfully"),
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || "Failed to join session";
+      toast.error(message);
+    }
+  })
+
+  const { host, problem } = currentSession || {};
+  const isHost = user?.id === host?.clerkId;
+  const isPartcipant = typeof currentSession?.participant === "object" && user?.id === currentSession.participant.clerkId;
+
+
+  // auto join if user is not already a participant
+  useEffect(() => {
+    if (!isLoaded || !user || !currentSession) return;
+    if (isHost || isPartcipant) return;
+    
+    joinSessionMutation.mutate(sessionId);
+  }, [sessionId, user, isLoaded, currentSession])
+
   if (!isLoaded) {
     return <div className="h-dvh flex items-center justify-center">
       <IconLoader className="size-5 animate-spin" />
     </div>
   }
 
-  const { host, problem } = currentSession || {};
-  const isHost = user?.id === host?.clerkId;
-
-  console.log(host, user);
   const handleRun = async (code: string, language: string) => { };
   const handleSubmit = async (code: string, language: string) => { };
 
@@ -120,7 +141,7 @@ export default function SessionDetailPage() {
         </Group>
       </div>
 
-       {/* ── Mobile: Tab Layout ── */}
+      {/* ── Mobile: Tab Layout ── */}
       <div className="flex md:hidden flex-col flex-1 min-h-0">
         {/* Tab panels — only active one is visible */}
         <div className="flex-1 min-h-0 overflow-hidden">
@@ -156,7 +177,7 @@ export default function SessionDetailPage() {
               key={id}
               onClick={() => setActiveTab(id)}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-1 py-2.5 text-xs font-medium transition-colors",
+                "flex-1 flex flex-col items-center justify-center gap-1 pt-4 pb-6 text-xs font-medium transition-colors",
                 activeTab === id
                   ? "text-primary border-t-2 border-primary -mt-px"
                   : "text-muted-foreground hover:text-foreground"

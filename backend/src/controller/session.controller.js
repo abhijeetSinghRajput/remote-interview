@@ -132,19 +132,18 @@ export const joinSession = async (req, res) => {
         if(session.participant) {
             return sendError(res, "Session already has a full", 409);
         }
-        if (session.participant.toString() === user._id.toString()) {
+        if (session.participant && session.participant.toString() === user._id.toString()) {
             return sendError(res, "User already joined the session", 400);
         }
 
         session.participant = user._id;
         await session.save();
 
-        // add participant to stream video call
-        await streamClient.video.call("default", session.callId).addMembers([user.clerkId]);
-
         // add participant to stream chat channel
         const channel = streamChat.channel("messaging", session.callId);
         await channel.addMembers([user.clerkId]);
+
+        sendSuccess(res, session, "Joined session successfully");
     } catch (error) {
         console.error("Error joining session:", error);
         sendError(res, "Failed to join session", 500, [error.message]);

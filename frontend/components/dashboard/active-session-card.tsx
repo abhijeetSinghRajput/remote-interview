@@ -1,15 +1,18 @@
 import { ISession } from '@/types/model';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { IconLoader, IconVideo } from '@tabler/icons-react';
+import { IconArrowRight, IconLoader, IconVideo } from '@tabler/icons-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useUser } from '@clerk/nextjs';
+import Link from 'next/link';
 
 const DIFF = {
   easy: "text-emerald-400 bg-emerald-950/60 border-emerald-800",
   medium: "text-amber-400 bg-amber-950/60 border-amber-800",
   hard: "text-rose-400 bg-rose-950/60 border-rose-800",
 };
+
 
 function ActiveSessionCard({
   session,
@@ -20,7 +23,17 @@ function ActiveSessionCard({
   onJoin: (id: string) => void;
   isJoining: boolean;
 }) {
+  const { user } = useUser();
   const spotsLeft = session.participant ? 0 : 1;
+
+  const isUserInSession = (session: ISession) => {
+    const participantId = typeof session.participant === "object" ? session?.participant.clerkId : null;
+    const hostId = typeof session.host === "object" ? session?.host.clerkId : null;
+
+    if(participantId && participantId === user?.id) return true;
+    if(hostId && hostId === user?.id) return true;
+    return false;
+  }
 
   return (
     <div className="group rounded-xl border border-border bg-card hover:border-primary/40 transition-all duration-200 overflow-hidden">
@@ -94,19 +107,12 @@ function ActiveSessionCard({
               ? formatDistanceToNow(new Date(session.createdAt), { addSuffix: true })
               : ""}
           </span>
-          <Button
-            size="sm"
-            variant={spotsLeft === 0 ? "outline" : "default"}
-            className="h-7 text-xs gap-1.5"
-            disabled={spotsLeft === 0 || isJoining}
-            onClick={() => onJoin(session._id)}
-          >
-            {isJoining ? (
-              <IconLoader className="h-3 w-3 animate-spin" />
-            ) : (
-              <IconVideo className="h-3 w-3" />
-            )}
-            {spotsLeft === 0 ? "Full" : "Join"}
+          <Button asChild disabled={spotsLeft === 0} size="sm">
+
+          <Link href={`/session/${session._id}`}>
+            {isUserInSession(session) ? "Rejoin" : "Join"}
+            <IconArrowRight className="size-4" />
+          </Link>
           </Button>
         </div>
       </div>
