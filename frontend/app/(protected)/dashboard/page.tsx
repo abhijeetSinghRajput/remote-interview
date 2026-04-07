@@ -9,6 +9,7 @@ import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -350,7 +351,7 @@ function CreateSessionDialog({
 
 // ── Dashboard Page ────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const {user, isLoaded, isSignedIn} = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
@@ -377,8 +378,8 @@ export default function DashboardPage() {
       router.push(`/session/${session._id}`);
     },
     onError: (error: any) => {
-    const message =
-      error?.response?.data?.message || "Failed to create session";
+      const message =
+        error?.response?.data?.message || "Failed to create session";
 
       toast.error(message);
     },
@@ -391,15 +392,15 @@ export default function DashboardPage() {
       router.push(`/session/${id}`);
     },
     onError: (error: any) => {
-    const message =
-      error?.response?.data?.message || "Something went wrong";
+      const message =
+        error?.response?.data?.message || "Something went wrong";
 
       toast.error(message);
     },
     onSettled: () => setJoiningId(null),
   });
 
-  if(!isLoaded) {
+  if (!isLoaded) {
     return (<div className="h-dvh flex items-center justify-center">
       <IconLoader className="h-8 w-8 animate-spin text-muted-foreground" />
     </div>)
@@ -407,7 +408,7 @@ export default function DashboardPage() {
 
   const handleJoin = (id: string) => {
     // Find the session object by id
-    const session = activeSessions.find((s:ISession) => s._id === id);
+    const session = activeSessions.find((s: ISession) => s._id === id);
     const isHost = session?.host?.clerkId === user?.id;
     if (isHost) {
       router.push(`/session/${id}`);
@@ -435,9 +436,9 @@ export default function DashboardPage() {
       value: activeLoading
         ? "—"
         : activeSessions.reduce(
-            (acc: number, s: ISession) => acc + 1 + (s.participant ? 1 : 0),
-            0
-          ),
+          (acc: number, s: ISession) => acc + 1 + (s.participant ? 1 : 0),
+          0
+        ),
       icon: IconUsers,
       accent: "bg-gradient-to-r from-amber-500 to-amber-400",
     },
@@ -448,18 +449,19 @@ export default function DashboardPage() {
       {/* ── Header ── */}
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
-          <div className="flex items-center gap-3">
-            <div className="h-6 w-6 rounded border border-primary/40 bg-primary/10 flex items-center justify-center">
-              <IconCode className="h-3.5 w-3.5 text-primary" />
+          {/* Logo */}
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-xs font-bold">
+              R
             </div>
-            <span className="font-black text-sm tracking-tight">
-              RemoteInterview
+            <span className="font-semibold tracking-tight">
+              Dashboard
             </span>
           </div>
           <div className="flex items-center gap-3">
             <Button
               size="sm"
-              className="h-8 text-xs gap-1.5 hidden sm:flex"
+              className="h-8 text-xs gap-1.5"
               onClick={() => setCreateOpen(true)}
             >
               <IconPlus className="h-3.5 w-3.5" />
@@ -471,25 +473,6 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {/* ── Hero row ── */}
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-1">
-              Dashboard
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Practice coding interviews with peers in real time.
-            </p>
-          </div>
-          <Button
-            className="h-9 text-sm gap-2 sm:hidden shrink-0"
-            onClick={() => setCreateOpen(true)}
-          >
-            <IconPlus className="h-4 w-4" />
-            New
-          </Button>
-        </div>
-
         {/* ── Stats ── */}
         <div className="grid grid-cols-3 gap-3">
           {stats.map((s) => (
@@ -497,8 +480,113 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* ── Main grid ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* ── Main content ── */}
+
+        {/* Mobile / tablet: tabs */}
+        <div className="lg:hidden space-y-4">
+          <Tabs defaultValue="live" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="live" className="text-xs">
+                Live
+              </TabsTrigger>
+              <TabsTrigger value="history" className="text-xs">
+                History
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="live" className="mt-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Active Sessions
+                  </h2>
+                  <span className="text-xs font-mono text-muted-foreground">
+                    {activeSessions.length} live
+                  </span>
+                </div>
+
+                {activeLoading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[...Array(4)].map((_, i) => (
+                      <Skeleton key={i} className="h-44 rounded-xl" />
+                    ))}
+                  </div>
+                ) : activeSessions.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border p-12 text-center">
+                    <IconActivity className="h-8 w-8 text-muted-foreground/40 mx-auto mb-3" />
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      No active sessions
+                    </p>
+                    <p className="text-xs text-muted-foreground/60 mb-4">
+                      Be the first to start one
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs gap-1.5"
+                      onClick={() => setCreateOpen(true)}
+                    >
+                      <IconPlus className="h-3.5 w-3.5" />
+                      Create Session
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {activeSessions.map((s: ISession) => (
+                      <ActiveSessionCard
+                        key={s._id}
+                        session={s}
+                        onJoin={handleJoin}
+                        isJoining={joiningId === s._id}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="history" className="mt-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <IconHistory className="h-3.5 w-3.5 text-muted-foreground" />
+                    Past Sessions
+                  </h2>
+                  <span className="text-xs font-mono text-muted-foreground">
+                    {recentSessions.length} total
+                  </span>
+                </div>
+
+                <div className="rounded-xl border border-border bg-card overflow-hidden">
+                  {recentLoading ? (
+                    <div className="p-3 space-y-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Skeleton key={i} className="h-14 rounded-lg" />
+                      ))}
+                    </div>
+                  ) : recentSessions.length === 0 ? (
+                    <div className="py-12 text-center">
+                      <IconClock className="h-7 w-7 text-muted-foreground/40 mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        No past sessions yet
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-2">
+                      {recentSessions.slice(0, 8).map((s: ISession) => (
+                        <RecentSessionRow key={s._id} session={s} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* Desktop: existing grid */}
+        <div className="hidden lg:grid lg:grid-cols-5 gap-6">
           {/* Active sessions — wider col */}
           <div className="lg:col-span-3 space-y-4">
             <div className="flex items-center justify-between">
