@@ -3,7 +3,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { IconClock, IconHistory } from "@tabler/icons-react";
 import type { ISession } from "@/types/model";
-import RecentSessionRow from "@/components/session/recent-session-row";
+import RecentSessionRow from "@/components/dashboard/recent-session-row";
 
 type RecentSessionsSectionProps = {
   sessions: ISession[];

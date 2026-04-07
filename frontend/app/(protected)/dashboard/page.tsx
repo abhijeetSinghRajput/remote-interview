@@ -9,11 +9,11 @@ import { IconPlus, IconUsers, IconActivity, IconHistory, IconLoader } from "@tab
 import { toast } from "sonner";
 import { createSession, getActiveSession, getMyRecentSessions, joinSession } from "@/services/session.service";
 import { ISession } from "@/types/model";
-import CreateSessionDialog from "@/components/session/create-session-dialog";
-import SessionStatCard from "@/components/session/session-stat-card";
+import CreateSessionDialog from "@/components/dashboard/create-session-dialog";
+import SessionStatCard from "@/components/dashboard/session-stat-card";
 
-import ActiveSessionsSection from "@/components/session/active-sessions-section";
-import RecentSessionsSection from "@/components/session/recent-sessions-section";
+import ActiveSessionsSection from "@/components/dashboard/active-sessions-section";
+import RecentSessionsSection from "@/components/dashboard/recent-sessions-section";
 
 export default function DashboardPage() {
   const { user, isLoaded, isSignedIn } = useUser();

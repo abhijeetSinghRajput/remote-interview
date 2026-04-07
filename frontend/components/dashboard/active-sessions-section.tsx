@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IconActivity, IconPlus } from "@tabler/icons-react";
 import type { ISession } from "@/types/model";
-import ActiveSessionCard from "@/components/session/active-session-card";
+import ActiveSessionCard from "@/components/dashboard/active-session-card";
 
 type ActiveSessionsSectionProps = {
   sessions: ISession[];
