@@ -6,9 +6,16 @@ import ProblemPanel from "@/app/(public)/problems/[slug]/problem-panel";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { cn } from "@/lib/utils";
 import { endSession, getSessionById, joinSession } from "@/services/session.service";
-import { ISessionDetail } from "@/types/model";
+import { ISession, ISessionDetail } from "@/types/model";
 import { UserButton, useUser } from "@clerk/nextjs";
-import { IconArrowRight, IconCode, IconFileText, IconLoader, IconMessageCircle, IconTerminal2, IconVideo } from "@tabler/icons-react";
+import {
+  IconCode,
+  IconFileText,
+  IconLoader,
+  IconMessageCircle,
+  IconTerminal2,
+  IconVideo,
+} from "@tabler/icons-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -59,7 +66,7 @@ export default function SessionDetailPage() {
     chatClient,
     channel,
     isLoading: isInitializingCall,
-  } = useStreamClient(currentSession, isLoading, isHost, isParticipant);
+  } = useStreamClient(currentSession as ISession, isLoading, isHost, isParticipant);
 
   const joinSessionMutation = useMutation({
     mutationKey: ["join-session", sessionId],

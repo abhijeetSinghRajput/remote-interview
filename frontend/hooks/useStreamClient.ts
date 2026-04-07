@@ -1,20 +1,27 @@
-import { api } from '@/lib/api'
-import React, { useEffect, useState } from 'react'
-import { disconnectStreamClient, initStreamClient } from '@/lib/stream'
-import { StreamChat } from "stream-chat";
+
+import { api } from '@/lib/api';
+import { useEffect, useState } from 'react';
+import { disconnectStreamClient, initStreamClient } from '@/lib/stream';
+import { StreamChat, Channel } from "stream-chat";
+import type { StreamVideoClient, Call } from "@stream-io/video-react-sdk";
 import { ISession } from '@/types/model';
 import { toast } from 'sonner';
 
-const useStreamClient = (session: ISession, loadingSession: boolean, isHost: boolean, isParticipant: boolean) => {
-  const [streamClient, setStreamClient] = useState<any>(null)
-  const [call, setCall] = useState<any>(null)
-  const [chatClient, setChatClient] = useState<any>(null)
-  const [channel, setChannel] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState<boolean>(true)
+const useStreamClient = (
+  session: ISession,
+  loadingSession: boolean,
+  isHost: boolean,
+  isParticipant: boolean
+) => {
+  const [streamClient, setStreamClient] = useState<StreamVideoClient | null>(null);
+  const [call, setCall] = useState<Call | null>(null);
+  const [chatClient, setChatClient] = useState<StreamChat | null>(null);
+  const [channel, setChannel] = useState<Channel | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    let videoCall = null;
-    let chatClientInstance = null;
+    let videoCall: Call | null = null;
+    let chatClientInstance: StreamChat | null = null;
 
     const initCall = async () => {
       if (!session?.callId) return;
@@ -36,8 +43,10 @@ const useStreamClient = (session: ISession, loadingSession: boolean, isHost: boo
         setStreamClient(client);
 
         videoCall = client.call("default", session.callId);
-        await videoCall.join({ create: true });
-        setCall(videoCall);
+        if (videoCall) {
+          await videoCall.join({ create: true });
+          setCall(videoCall);
+        }
 
         chatClientInstance = StreamChat.getInstance(process.env.NEXT_PUBLIC_STREAM_API_KEY!);
         await chatClientInstance.connectUser(user, token);

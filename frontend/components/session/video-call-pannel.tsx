@@ -19,9 +19,20 @@ import {
     useCallStateHooks
 } from "@stream-io/video-react-sdk"
 import { useRouter } from "next/navigation"
-import { cn } from "@/lib/utils"
+// import { cn } from "@/lib/utils"
 
-const VideoCallPanel = ({ isLoading, streamClient, call, chatClient, channel }) => {
+import type { StreamVideoClient, Call } from "@stream-io/video-react-sdk";
+import type { StreamChat, Channel } from "stream-chat";
+
+interface VideoCallPanelProps {
+    isLoading: boolean;
+    streamClient: StreamVideoClient | null;
+    call: Call | null;
+    chatClient: StreamChat | null;
+    channel: Channel | null;
+}
+
+const VideoCallPanel = ({ isLoading, streamClient, call, chatClient, channel }: VideoCallPanelProps) => {
     if (isLoading) {
         return <LoadingState label="Initialising call…" />
     }
@@ -55,7 +66,12 @@ function LoadingState({ label = "Connecting…" }: { label?: string }) {
 }
 
 /* ─── Main call UI ──────────────────────────────────────── */
-function VideoCallUi({ chatClient, channel }) {
+interface VideoCallUiProps {
+    chatClient: StreamChat | null;
+    channel: Channel | null;
+}
+
+function VideoCallUi({ chatClient, channel }: VideoCallUiProps) {
     const { useCallCallingState, useParticipantCount } = useCallStateHooks();
     const callingState = useCallCallingState();
     const participantCount = useParticipantCount();
