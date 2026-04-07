@@ -1,20 +1,23 @@
-"use client";;
+"use client";
 import CodeEditorPanel from "@/app/(public)/problems/[slug]/code-editor-panel";
 import OutputPanel from "@/app/(public)/problems/[slug]/output-panel";
 import ProblemPanel from "@/app/(public)/problems/[slug]/problem-panel";
-import { Button } from "@/components/ui/button";
+
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { cn } from "@/lib/utils";
-import { getSessionById, joinSession } from "@/services/session.service";
+import { endSession, getSessionById, joinSession } from "@/services/session.service";
 import { ISessionDetail } from "@/types/model";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { IconArrowRight, IconCode, IconFileText, IconLoader, IconMessageCircle, IconTerminal2, IconVideo } from "@tabler/icons-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { toast } from "sonner";
+import useStreamClient from "@/hooks/useStreamClient";
+import EndSessionButton from "@/components/session/end-session-button";
+import VideoCallPanel from "@/components/session/video-call-pannel";
 
 const TABS = [
   { id: "problem", label: "Problem", icon: IconFileText },
@@ -35,16 +38,28 @@ export default function SessionDetailPage() {
         ? params.id[0]
         : "";
 
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>("problem");
   const { user, isLoaded } = useUser();
 
-  // fetch current problem for code stubs
   const { data: currentSession, isLoading, isError, error } = useQuery<ISessionDetail>({
     queryKey: ["problem", sessionId],
     queryFn: () => getSessionById(sessionId),
     enabled: !!sessionId,
     staleTime: 5 * 60_000,
   });
+
+  const { host, problem } = currentSession || {};
+  const isHost = user?.id === host?.clerkId;
+  const isParticipant = typeof currentSession?.participant === "object" && user?.id === currentSession.participant.clerkId;
+
+  const {
+    streamClient,
+    call,
+    chatClient,
+    channel,
+    isLoading: isInitializingCall,
+  } = useStreamClient(currentSession, isLoading, isHost, isParticipant);
 
   const joinSessionMutation = useMutation({
     mutationKey: ["join-session", sessionId],
@@ -55,25 +70,39 @@ export default function SessionDetailPage() {
         error?.response?.data?.message || "Failed to join session";
       toast.error(message);
     }
-  })
+  });
 
-  const { host, problem } = currentSession || {};
-  const isHost = user?.id === host?.clerkId;
-  const isPartcipant = typeof currentSession?.participant === "object" && user?.id === currentSession.participant.clerkId;
+  const endSessionMutation = useMutation({
+    mutationKey: ["end-session", sessionId],
+    mutationFn: (id: string) => endSession(id),
+    onSuccess: () => {
+      // navigate back to dashboard after ending session
+      router.push("/dashboard");
+    }
+  });
 
 
-  // auto join if user is not already a participant
+  // auto join the session if user is not host or participant
   useEffect(() => {
     if (!isLoaded || !user || !currentSession) return;
-    if (isHost || isPartcipant) return;
-    
+    if (isHost || isParticipant) return;
     joinSessionMutation.mutate(sessionId);
-  }, [sessionId, user, isLoaded, currentSession])
+  }, [sessionId, user, isLoaded, currentSession]);
+
+  useEffect(() => {
+    if (!currentSession || isLoading) return;
+    if (currentSession.status !== "active") {
+      //navigate to dashboard if session is no longer active
+      router.push("/dashboard");
+    }
+  }, [currentSession]);
 
   if (!isLoaded) {
-    return <div className="h-dvh flex items-center justify-center">
-      <IconLoader className="size-5 animate-spin" />
-    </div>
+    return (
+      <div className="h-dvh flex items-center justify-center">
+        <IconLoader className="size-5 animate-spin" />
+      </div>
+    );
   }
 
   const handleRun = async (code: string, language: string) => { };
@@ -91,11 +120,11 @@ export default function SessionDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-
-          <Button variant={"destructive"}>
-            {(isHost ? "End Session" : "Leave Session")}
-            <IconArrowRight />
-          </Button>
+          <EndSessionButton
+            onConfim={() => endSessionMutation.mutate(sessionId)}
+            isLoading={endSessionMutation.isPending}
+            isHost={isHost}
+          />
           <ModeToggle />
           <UserButton />
         </div>
@@ -143,9 +172,7 @@ export default function SessionDetailPage() {
 
       {/* ── Mobile: Tab Layout ── */}
       <div className="flex md:hidden flex-col flex-1 min-h-0">
-        {/* Tab panels — only active one is visible */}
         <div className="flex-1 min-h-0 overflow-hidden">
-          {/* Problem tab */}
           <div className={cn("h-full overflow-hidden", activeTab !== "problem" && "hidden")}>
             <ProblemPanel
               problem={problem ?? null}
@@ -155,7 +182,6 @@ export default function SessionDetailPage() {
             />
           </div>
 
-          {/* Code tab */}
           <div className={cn("h-full overflow-hidden", activeTab !== "code" && "hidden")}>
             <CodeEditorPanel
               codeStubs={problem?.codeStubs}
@@ -164,9 +190,21 @@ export default function SessionDetailPage() {
             />
           </div>
 
-          {/* Output tab */}
           <div className={cn("h-full overflow-hidden", activeTab !== "output" && "hidden")}>
             <OutputPanel />
+          </div>
+          <div className={cn("h-full overflow-hidden", activeTab !== "video" && "hidden")}>
+            <VideoCallPanel
+              isLoading={isInitializingCall}
+              streamClient={streamClient}
+              call={call}
+              chatClient={chatClient}
+              channel={channel}
+            />
+
+          </div>
+          <div className={cn("h-full overflow-hidden", activeTab !== "chat" && "hidden")}>
+            Chat Panel
           </div>
         </div>
 
@@ -189,7 +227,6 @@ export default function SessionDetailPage() {
           ))}
         </nav>
       </div>
-
     </div>
-  )
+  );
 }
