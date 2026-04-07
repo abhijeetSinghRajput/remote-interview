@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { Providers } from "./providers";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "sonner";
+import { ApiProvider } from "@/components/ApiProvider";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -33,19 +34,21 @@ export default function RootLayout({
     >
       <body>
         <ClerkProvider>
-          <Providers>
-            <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-            >
-              <TooltipProvider>
-                {children}
-                <Toaster richColors position="top-right" />
-              </TooltipProvider>
-            </ThemeProvider>
-          </Providers>
+          <ApiProvider>
+            <Providers>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                <TooltipProvider>
+                  {children}
+                  <Toaster richColors position="top-right" />
+                </TooltipProvider>
+              </ThemeProvider>
+            </Providers>
+          </ApiProvider>
         </ClerkProvider>
       </body>
     </html>

@@ -350,7 +350,7 @@ function CreateSessionDialog({
 
 // ── Dashboard Page ────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const {user, isLoaded} = useUser();
+  const {user, isLoaded, isSignedIn} = useUser();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
@@ -360,11 +360,13 @@ export default function DashboardPage() {
     queryKey: ["active-sessions"],
     queryFn: () => getActiveSession({ page: 1, limit: 20 }),
     refetchInterval: 15_000, // poll every 15s
+    enabled: isLoaded && isSignedIn,
   });
 
   const { data: recentSessions = [], isLoading: recentLoading } = useQuery({
     queryKey: ["recent-sessions"],
     queryFn: () => getMyRecentSessions({ page: 1, limit: 20 }),
+    enabled: isLoaded && isSignedIn,
   });
 
   const createMutation = useMutation({
@@ -429,12 +431,6 @@ export default function DashboardPage() {
       accent: "bg-gradient-to-r from-blue-500 to-blue-400",
     },
     {
-      label: "Problems",
-      value: "50+",
-      icon: IconCode,
-      accent: "bg-gradient-to-r from-violet-500 to-violet-400",
-    },
-    {
       label: "Peers Online",
       value: activeLoading
         ? "—"
@@ -495,7 +491,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Stats ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           {stats.map((s) => (
             <StatCard key={s.label} {...s} />
           ))}
@@ -559,7 +555,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold flex items-center gap-2">
                 <IconHistory className="h-3.5 w-3.5 text-muted-foreground" />
-                Recent Sessions
+                Past Sessions
               </h2>
               <span className="text-xs font-mono text-muted-foreground">
                 {recentSessions.length} total
