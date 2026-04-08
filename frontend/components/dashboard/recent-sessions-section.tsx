@@ -26,7 +26,7 @@ export default function RecentSessionsSection({
         </span>
       </div>
 
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="overflow-hidden">
         {isLoading ? (
           <div className="p-3 space-y-1">
             {[...Array(5)].map((_, i) => (
@@ -41,7 +41,7 @@ export default function RecentSessionsSection({
             </p>
           </div>
         ) : (
-          <div className="p-2">
+          <div>
             {sessions.slice(0, 8).map((session) => (
               <RecentSessionRow key={session._id} session={session} />
             ))}

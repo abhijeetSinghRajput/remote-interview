@@ -43,7 +43,7 @@ const VideoCallPanel = ({ isLoading, streamClient, call, chatClient, channel }: 
         <div className="h-full flex flex-col bg-background overflow-hidden">
             <StreamVideo client={streamClient}>
                 <StreamCall call={call}>
-                    <VideoCallUi chatClient={chatClient} channel={channel} />
+                    <VideoCallUi />
                 </StreamCall>
             </StreamVideo>
         </div>
@@ -65,13 +65,8 @@ function LoadingState({ label = "Connecting…" }: { label?: string }) {
     )
 }
 
-/* ─── Main call UI ──────────────────────────────────────── */
-interface VideoCallUiProps {
-    chatClient: StreamChat | null;
-    channel: Channel | null;
-}
 
-function VideoCallUi({ chatClient, channel }: VideoCallUiProps) {
+function VideoCallUi() {
     const { useCallCallingState, useParticipantCount } = useCallStateHooks();
     const callingState = useCallCallingState();
     const participantCount = useParticipantCount();

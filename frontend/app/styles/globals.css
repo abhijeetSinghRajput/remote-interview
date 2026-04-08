@@ -159,3 +159,37 @@
 .animate-collapsible-up {
   animation: collapsible-up 0.25s ease-in;
 }
+
+/* Stream + shadcn bridge */
+.app-chat-theme.str-chat {
+  --str-chat__font-family: var(--font-sans);
+
+  --str-chat__date-separator-line: var(--border);
+
+  --str-chat__primary-color: var(--primary);
+  --str-chat__active-primary-color: var(--primary);
+  --str-chat__on-primary-color: var(--primary-foreground);
+
+  --str-chat__background-color: var(--background);
+  --str-chat__secondary-background-color: var(--background);
+
+  --str-chat__surface-color: var(--border);
+  --str-chat__secondary-surface-color: var(--muted);
+  --str-chat__tertiary-surface-color: var(--card);
+
+  --str-chat__primary-surface-color: var(--accent);
+  --str-chat__primary-surface-color-low-emphasis: var(--secondary);
+
+  --str-chat__text-color: var(--foreground);
+  --str-chat__text-low-emphasis-color: var(--muted-foreground);
+
+  --str-chat__disabled-color: var(--muted-foreground);
+  --str-chat__overlay-color: color-mix(in oklab, var(--background) 85%, black);
+
+  --str-chat__border-radius-xs: calc(var(--radius) * 0.6);
+  --str-chat__border-radius-sm: calc(var(--radius) * 0.8);
+  --str-chat__border-radius-md: var(--radius);
+  --str-chat__border-radius-lg: calc(var(--radius) * 1.2);
+  --str-chat__border-radius-circle: 9999px;
+}
+

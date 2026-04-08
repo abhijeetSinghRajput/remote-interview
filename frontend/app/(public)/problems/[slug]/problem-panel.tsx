@@ -1,25 +1,20 @@
-"use client";
+"use client";;
 import  "@/app/styles/rich-text.css";
 
 import { useEffect, useState } from "react";
 import type { IProblem } from "@/types/model";
-import { useQuery } from "@tanstack/react-query";
 import { marked } from "marked";
 
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
-import { IconChevronDown, IconTag } from "@tabler/icons-react";
+import { IconTag } from "@tabler/icons-react";
 import rehypeHighlight from "rehype-highlight";
 import rehypeParse from "rehype-parse";
 import rehypeStringify from "rehype-stringify";
 import { unified } from "unified";
+import ProblemPanelSkeleton from "@/components/skeleton/problem-panel-skeleton";
+import HintsTabs from "@/components/problem/hint-tabs";
 
 // ── Difficulty config ─────────────────────────────────────────────────────
 const DIFFICULTY_CONFIG = {
@@ -49,7 +44,7 @@ function RichTextRenderer({ content }: { content: string }) {
 
     async function process() {
       const isHTML = /<[a-z][\s\S]*>/i.test(content);
-      let raw = isHTML ? content : String(await marked.parse(content));
+      const raw = isHTML ? content : String(await marked.parse(content));
 
       const file = await unified()
         .use(rehypeParse, { fragment: true })
@@ -73,73 +68,6 @@ function RichTextRenderer({ content }: { content: string }) {
   );
 }
 
-// ── Skeleton loader ───────────────────────────────────────────────────────
-function PanelSkeleton() {
-  return (
-    <div className="flex flex-col h-full p-5 gap-4">
-      <div className="flex items-center gap-3">
-        <Skeleton className="h-5 w-48" />
-        <Skeleton className="h-5 w-14 rounded-full" />
-      </div>
-      <div className="flex gap-2">
-        <Skeleton className="h-5 w-16 rounded-full" />
-        <Skeleton className="h-5 w-20 rounded-full" />
-        <Skeleton className="h-5 w-14 rounded-full" />
-      </div>
-      <Separator />
-      <div className="space-y-3 flex-1">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-5/6" />
-        <Skeleton className="h-4 w-4/6" />
-        <Skeleton className="h-20 w-full rounded-md mt-4" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-3/4" />
-      </div>
-    </div>
-  );
-}
-
-// ── Hints tab ─────────────────────────────────────────────────────────────
-function HintsTab({ hints }: { hints: string[] }) {
-  if (!hints?.length) {
-    return (
-      <div className="py-10 text-center text-sm text-muted-foreground">
-        No hints available.
-      </div>
-    );
-  }
-
-  return (
-    <div className="divide-y">
-      {hints.map((hint: string, i: number) => (
-        <Collapsible key={i}>
-          <CollapsibleTrigger asChild>
-            <button className="w-full flex items-center justify-between py-3 text-sm text-left">
-              <span className="font-semibold">Hint {i + 1}</span>
-              <IconChevronDown className="h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />
-            </button>
-          </CollapsibleTrigger>
-
-          <CollapsibleContent
-            className="
-              overflow-hidden
-              transition-all
-              duration-300
-              data-[state=closed]:animate-collapsible-up
-              data-[state=open]:animate-collapsible-down
-            "
-          >
-            <div className="py-3 text-sm text-muted-foreground">
-              {hint}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      ))}
-    </div>
-  );
-}
-
-// ── Main panel ────────────────────────────────────────────────────────────
 interface ProblemPanelProps {
   problem: IProblem | null;
   isLoading: boolean;
@@ -153,7 +81,8 @@ export default function ProblemPanel({
   isError, 
   error 
 }: ProblemPanelProps) {
-  if (isLoading) return <PanelSkeleton />;
+
+  if (isLoading) return <ProblemPanelSkeleton />;
 
   if (isError) {
     return (
@@ -204,7 +133,7 @@ export default function ProblemPanel({
 
         <div className="px-5 py-4">
             <RichTextRenderer content={problem.description} />
-            <HintsTab hints={problem.hints} />
+            <HintsTabs hints={problem.hints} />
         </div>
     </div>
   );

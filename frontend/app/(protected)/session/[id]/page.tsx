@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import useStreamClient from "@/hooks/useStreamClient";
 import EndSessionButton from "@/components/session/end-session-button";
 import VideoCallPanel from "@/components/session/video-call-pannel";
+import ChatPanel from "@/components/session/chat-panel";
 
 const TABS = [
   { id: "problem", label: "Problem", icon: IconFileText },
@@ -47,10 +48,11 @@ export default function SessionDetailPage() {
 
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>("problem");
+  const [isLeavingSession, setIsLeavingSession] = useState(false);
   const { user, isLoaded } = useUser();
 
   const { data: currentSession, isLoading, isError, error } = useQuery<ISessionDetail>({
-    queryKey: ["problem", sessionId],
+    queryKey: ["session", sessionId],
     queryFn: () => getSessionById(sessionId),
     enabled: !!sessionId,
     staleTime: 5 * 60_000,
@@ -80,29 +82,42 @@ export default function SessionDetailPage() {
   });
 
   const endSessionMutation = useMutation({
-    mutationKey: ["end-session", sessionId],
-    mutationFn: (id: string) => endSession(id),
-    onSuccess: () => {
-      // navigate back to dashboard after ending session
-      router.push("/dashboard");
-    }
-  });
+  mutationKey: ["end-session", sessionId],
+  mutationFn: async (id: string) => {
+    setIsLeavingSession(true); // 🔥 important
+    return endSession(id);
+  },
+  onSuccess: () => {
+    router.push("/dashboard");
+  },
+  onError: () => {
+    setIsLeavingSession(false); // fallback
+  },
+});
 
 
   // auto join the session if user is not host or participant
   useEffect(() => {
     if (!isLoaded || !user || !currentSession) return;
     if (isHost || isParticipant) return;
+
     joinSessionMutation.mutate(sessionId);
-  }, [sessionId, user, isLoaded, currentSession]);
+  }, [
+    sessionId,
+    user,
+    isLoaded,
+    currentSession,
+    isHost,
+    isParticipant,
+    joinSessionMutation,
+  ]);
 
   useEffect(() => {
     if (!currentSession || isLoading) return;
     if (currentSession.status !== "active") {
-      //navigate to dashboard if session is no longer active
       router.push("/dashboard");
     }
-  }, [currentSession]);
+  }, [currentSession, isLoading, router]);
 
   if (!isLoaded) {
     return (
@@ -200,19 +215,23 @@ export default function SessionDetailPage() {
           <div className={cn("h-full overflow-hidden", activeTab !== "output" && "hidden")}>
             <OutputPanel />
           </div>
-          <div className={cn("h-full overflow-hidden", activeTab !== "video" && "hidden")}>
-            <VideoCallPanel
-              isLoading={isInitializingCall}
-              streamClient={streamClient}
-              call={call}
-              chatClient={chatClient}
-              channel={channel}
-            />
+          {activeTab === "video" && !isLeavingSession && (
+            <div className="h-full overflow-hidden">
+              <VideoCallPanel
+                isLoading={isInitializingCall}
+                streamClient={streamClient}
+                call={call}
+                chatClient={chatClient}
+                channel={channel}
+              />
+            </div>
+          )}
 
-          </div>
-          <div className={cn("h-full overflow-hidden", activeTab !== "chat" && "hidden")}>
-            Chat Panel
-          </div>
+          {activeTab === "chat" && !isLeavingSession && (
+            <div className="h-full overflow-hidden">
+              <ChatPanel chatClient={chatClient} channel={channel} />
+            </div>
+          )}
         </div>
 
         {/* Bottom tab bar */}

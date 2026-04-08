@@ -14,6 +14,7 @@ import SessionStatCard from "@/components/dashboard/session-stat-card";
 
 import ActiveSessionsSection from "@/components/dashboard/active-sessions-section";
 import RecentSessionsSection from "@/components/dashboard/recent-sessions-section";
+import { ModeToggle } from "@/components/ui/mode-toggle";
 
 export default function DashboardPage() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -90,12 +91,12 @@ export default function DashboardPage() {
       icon: IconActivity,
     },
     {
-      label: "Past Sessions",
+      label: "History",
       value: recentLoading ? "—" : recentSessions.length,
       icon: IconHistory,
     },
     {
-      label: "Peers Online",
+      label: "Online",
       value: activeLoading
         ? "—"
         : activeSessions.reduce(
@@ -123,12 +124,15 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <Button
               size="sm"
-              className="h-8 text-xs gap-1.5"
+              className="h-8 w-8 sm:w-auto text-xs gap-1.5"
               onClick={() => setCreateOpen(true)}
             >
               <IconPlus className="h-3.5 w-3.5" />
-              New Session
+              <span className="hidden sm:inline">
+                New Session
+              </span>
             </Button>
+            <ModeToggle />
             <UserButton />
           </div>
         </div>
