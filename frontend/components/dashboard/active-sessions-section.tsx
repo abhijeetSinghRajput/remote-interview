@@ -40,7 +40,7 @@ export default function ActiveSessionsSection({
           ))}
         </div>
       ) : sessions.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-12 text-center">
+        <div className="rounded-xl bg-muted/30 border border-dashed border-border p-12 text-center">
           <IconActivity className="h-8 w-8 text-muted-foreground/40 mx-auto mb-3" />
           <p className="text-sm font-medium text-muted-foreground mb-1">
             No active sessions
