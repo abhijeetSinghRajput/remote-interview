@@ -24,7 +24,7 @@ const ChatPanel = ({ chatClient, channel }: ChatPanelProps) => {
   if (channel.getClient?.() !== chatClient) return null;
 
   return (
-    <div className="h-full">
+    <div className="h-full bg-muted/50">
       <Chat client={chatClient} theme="app-chat-theme">
         <Channel channel={channel}>
           <Window>

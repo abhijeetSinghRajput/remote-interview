@@ -1,10 +1,9 @@
-"use client"
+"use client";
 import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   IconArrowRight,
   IconBan,
@@ -15,7 +14,7 @@ import {
   IconMicrophone,
   IconVideo,
 } from "@tabler/icons-react"
-import { Show, SignIn, SignInButton, UserButton } from "@clerk/nextjs"
+import { Show, SignInButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link"
 
 const FEATURES = [
@@ -317,7 +316,7 @@ export default function HomePage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map(({ icon, title, desc, accent, border }) => (
+              {FEATURES.map(({ icon, title, desc }) => (
                 <Card
                   key={title}
                   className={`cursor-default border border-muted bg-card transition-transform duration-200 hover:scale-[1.01]`}
@@ -392,7 +391,7 @@ export default function HomePage() {
                 >
                   <CardContent className="p-6">
                     <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
-                      "{quote}"
+                      &quot;{quote}&quot;
                     </p>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
@@ -429,7 +428,7 @@ export default function HomePage() {
                   size="lg"
                   className="h-12 px-10 text-base font-semibold"
                 >
-                  Get started — it's free
+                  Get started — it&apos;s free
                 </Button>
                 <Button
                   size="lg"

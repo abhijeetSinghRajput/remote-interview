@@ -104,8 +104,8 @@ function VideoCallUi() {
             </div>
 
             {/* ── Video area ── */}
-            <div className="flex-1 min-h-0 relative bg-muted">
-                <div className="str-video h-full w-full">
+            <div className="flex-1 min-h-0 relative bg-muted/50">
+                <div className="app-video-theme str-video h-full w-full">
                     <SpeakerLayout />
                 </div>
             </div>
