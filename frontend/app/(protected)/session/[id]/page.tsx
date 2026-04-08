@@ -13,8 +13,10 @@ import {
   IconFileText,
   IconLoader,
   IconMessageCircle,
+  IconMessageCircleFilled,
   IconTerminal2,
   IconVideo,
+  IconVideoFilled,
 } from "@tabler/icons-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import Link from "next/link";
@@ -348,21 +350,31 @@ export default function SessionDetailPage() {
             className="flex h-full w-12 flex-col items-center justify-center gap-2 rounded-xl border bg-muted/50 px-1 py-2"
           >
             <Button
-              size="icon"
               onClick={() => toggleDesktopRightPanel("video")}
               title="Video"
-              variant={desktopRightPanel === "video" ? "default" : "ghost"}
+              variant={desktopRightPanel === "video" ? "default" : "outline"}
+              className={cn(
+                "max-h-40 h-full  p-2",
+                desktopRightPanel === "chat" && "text-muted-foreground/60 hover:text-muted-foreground"
+              )}
+              style={{writingMode: "vertical-rl"}}
             >
-              <IconVideo className="h-4.5 w-4.5" />
+              <IconVideoFilled className="size-4.5 rotate-90" />
+              Video
             </Button>
 
             <Button
-              size="icon"
               onClick={() => toggleDesktopRightPanel("chat")}
-              variant={desktopRightPanel === "chat" ? "default" : "ghost"}
+              variant={desktopRightPanel === "chat" ? "default" : "outline"}
               title="Chat"
+              className={cn(
+                "max-h-40 h-full p-2",
+                desktopRightPanel === "video" && "text-muted-foreground/60 hover:text-muted-foreground"
+              )}
+              style={{writingMode: "vertical-rl"}}
             >
-              <IconMessageCircle className="h-4.5 w-4.5" />
+              <IconMessageCircleFilled className="size-4.5 rotate-90" />
+              Chat
             </Button>
           </div>
         </div>
