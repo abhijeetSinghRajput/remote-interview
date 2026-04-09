@@ -8,6 +8,10 @@ import sessionRoute from "./session.route.js";
 
 const router = Router();
 
+router.get("/health", (req, res) => {
+    res.json({ status: "ok", timestamp: new Date() });
+});
+
 router.use("/inngest", serve({ client: inngest, functions }));
 router.use("/chat", protect, chatRoute);
 router.use("/sessions", protect, sessionRoute);
