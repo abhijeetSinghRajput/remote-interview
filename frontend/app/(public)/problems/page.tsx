@@ -332,7 +332,6 @@ export default function ProblemsPage() {
                 <TableHead className="w-12 text-xs">#</TableHead>
                 <TableHead className="text-xs">Title</TableHead>
                 <TableHead className="text-xs w-24">Difficulty</TableHead>
-                <TableHead className="text-xs">Tags</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -377,20 +376,6 @@ export default function ProblemsPage() {
                     {/* Difficulty */}
                     <TableCell>
                       <DifficultyBadge difficulty={problem.difficulty} />
-                    </TableCell>
-
-                    {/* Tags */}
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {problem.tags?.slice(0, 3).map((t: string) => (
-                          <TagBadge key={t} tag={t} />
-                        ))}
-                        {problem.tags?.length > 3 && (
-                          <span className="text-xs text-muted-foreground self-center">
-                            +{problem.tags.length - 3}
-                          </span>
-                        )}
-                      </div>
                     </TableCell>
                   </TableRow>
                 ))

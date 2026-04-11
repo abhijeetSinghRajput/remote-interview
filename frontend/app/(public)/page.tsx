@@ -16,6 +16,9 @@ import {
 } from "@tabler/icons-react"
 import { Show, SignInButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link"
+import { useTheme } from "next-themes";
+import Image from "next/image";
+import { ModeToggle } from "@/components/ui/mode-toggle";
 
 const FEATURES = [
   {
@@ -118,6 +121,7 @@ const STATS = [
 
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false)
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -131,11 +135,10 @@ export default function HomePage() {
 
       {/* ── Navbar ── */}
       <header
-        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
-          scrolled
+        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${scrolled
             ? "border border-b bg-[#09090b]/80 backdrop-blur-xl"
             : "bg-transparent"
-        }`}
+          }`}
       >
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           {/* Logo */}
@@ -149,7 +152,8 @@ export default function HomePage() {
           </div>
 
           {/* CTA */}
-          <div className="items-center gap-3 md:flex">
+          <div className="gap-3 flex items-center">
+            <ModeToggle />
             <Show when="signed-in">
               <UserButton />
             </Show>
@@ -199,7 +203,7 @@ export default function HomePage() {
               </Show>
               <Button asChild variant="outline" size="lg" className="h-12 px-6">
                 <Link href="/problems">
-                Explore
+                  Problems
                 </Link>
               </Button>
             </div>
@@ -209,80 +213,23 @@ export default function HomePage() {
           <div className="relative mx-auto mt-20 max-w-5xl">
             {/* No gradient overlay */}
             <div className="overflow-hidden rounded-2xl border border-muted shadow-2xl backdrop-blur-sm">
-              {/* Fake window bar */}
-              <div className="/2 flex items-center gap-2 border border-b px-4 py-3">
-                <div className="h-3 w-3 rounded-full bg-rose-500/60" />
-                <div className="h-3 w-3 rounded-full bg-amber-500/60" />
-                <div className="h-3 w-3 rounded-full bg-emerald-500/60" />
-                <div className="flex-1 text-center">
-                  <span className="font-mono text-[11px] text-muted-foreground">
-                    remoteinterview.io/room/abc-xyz-123
-                  </span>
-                </div>
-              </div>
-              {/* Fake editor layout */}
-              <div className="grid h-72 grid-cols-5 md:h-96">
-                {/* Sidebar */}
-                <div className="col-span-1 hidden border border-r bg-black/20 p-3 md:block">
-                  <p className="mb-3 text-[10px] tracking-widest text-muted-foreground uppercase">
-                    Problems
-                  </p>
-                  {["Two Sum", "Valid Parens", "LRU Cache", "Debounce"].map(
-                    (p, i) => (
-                      <div
-                        key={p}
-                        className={`mb-1 cursor-pointer rounded px-2 py-1.5 text-[11px] ${
-                          i === 0
-                            ? "bg-primary/20"
-                            : "text-muted-foreground hover:text-muted-foreground"
-                        }`}
-                      >
-                        {p}
-                      </div>
-                    )
-                  )}
-                </div>
-                {/* Code area */}
-                <div className="col-span-5 overflow-hidden bg-black/30 p-4 text-left font-mono text-[12px] md:col-span-3">
-                  <div className="mb-2 text-[10px] text-muted-foreground">
-                    solution.js
-                  </div>
-                  <pre className="leading-relaxed">
-                    {`<span class="text-violet-400">function</span> <span class="text-cyan-400">twoSum</span>(nums, target) {
-  <span class="text-violet-400">const</span> map = <span class="text-violet-400">new</span> Map();
-  
-  <span class="text-violet-400">for</span> (<span class="text-violet-400">let</span> i = <span class="text-amber-400">0</span>; i < nums.length; i++) {
-    <span class="text-violet-400">const</span> comp = target - nums[i];
-    
-    <span class="text-violet-400">if</span> (map.has(comp)) {
-      <span class="text-violet-400">return</span> [map.get(comp), i];
-    }
-    map.set(nums[i], i);
-  }
-}`}
-                  </pre>
-                </div>
-                {/* Video panel */}
-                <div className="col-span-1 hidden flex-col gap-3 border border-l bg-black/20 p-3 md:flex">
-                  <div className="flex flex-1 items-center justify-center rounded-lg text-2xl">
-                    👤
-                  </div>
-                  <div className="flex flex-1 items-center justify-center rounded-lg border bg-card/20 text-2xl">
-                    👤
-                  </div>
-                  <div className="flex justify-center gap-2">
-                    <div className="/5 flex h-7 w-7 items-center justify-center rounded-full text-[10px]">
-                      <IconMicrophone className="size-4 text-muted-foreground" />
-                    </div>
-                    <div className="/5 flex h-7 w-7 items-center justify-center rounded-full text-[10px]">
-                      <IconVideo className="size-4 text-muted-foreground" />
-                    </div>
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-500/20 text-[10px]">
-                      <IconBan className="size-4 text-muted-foreground" />
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {resolvedTheme === "dark" ? (
+                <Image
+                  src="/hero-preview-dark.png"
+                  width={800}
+                  height={450}
+                  alt="Hero preview of the code editor and video call interface"
+                  className="h-auto w-full object-cover"
+                />
+              ) : (
+                <Image
+                  src="/hero-preview-light.png"
+                  width={800}
+                  height={450}
+                  alt="Hero preview of the code editor and video call interface"
+                  className="h-auto w-full object-cover"
+                />
+              )}
             </div>
           </div>
         </section>
