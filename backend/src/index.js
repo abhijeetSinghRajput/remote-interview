@@ -12,7 +12,15 @@ import { clerkMiddleware } from "@clerk/express";
 const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: ENV.CLIENT_URL, credentials: true }));
+app.use(cors({
+  origin: [
+    ENV.CLIENT_URL,
+    "http://localhost:3000", //Next
+    "http://localhost:3001", //Next fallback
+    "http://localhost:5173", //React 
+    "http://localhost:5174", //React fallback
+  ], credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

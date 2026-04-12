@@ -1,12 +1,11 @@
-"use client";;
+"use client";
+
 import ProblemPanel from "./problem-panel";
 import { useParams } from "next/navigation";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import CodeEditorPanel from "./code-editor-panel";
-import type { IProblem } from "@/types/model";
 import OutputPanel from "./output-panel";
 import ProblemListSheet from "../problem-list-sheet";
-import type { ProblemListItem } from "../problem-list-sheet";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { useQuery } from "@tanstack/react-query";
 import { UserButton } from "@clerk/nextjs";
@@ -15,9 +14,11 @@ import { IconFileText, IconCode, IconTerminal2 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { fetchProblemDetail, fetchProblemList } from "@/services/problem.service";
+import type { IProblemDetail } from "@/types/problem.types";
+import type { ProblemItem } from "@/services/problem.service";
 
+// ── Mobile tab config ──────────────────────────────────────────────────────────
 
-// ── Mobile tab config ─────────────────────────────────────────────────────
 const TABS = [
   { id: "problem", label: "Problem", icon: IconFileText },
   { id: "code", label: "Code", icon: IconCode },
@@ -26,7 +27,8 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-// ── Page ──────────────────────────────────────────────────────────────────
+// ── Page ──────────────────────────────────────────────────────────────────────
+
 export default function ProblemDetailPage() {
   const params = useParams();
   const slug =
@@ -38,26 +40,31 @@ export default function ProblemDetailPage() {
 
   const [activeTab, setActiveTab] = useState<TabId>("problem");
 
-  // fetch once here — sheet just receives props
-  const { data: problems = [], isLoading: problemsLoading } = useQuery({
+  // Lightweight list for the sidebar sheet
+  const { data: listData, isLoading: problemsLoading } = useQuery({
     queryKey: ["problems-list"],
-    queryFn: () => fetchProblemList({}),
+    queryFn: () => fetchProblemList({ limit: 100, skip: 0 }),
     staleTime: Infinity,
     gcTime: Infinity,
   });
 
-  // fetch current problem for code stubs
-  const { data: currentProblem , isLoading, isError, error} = useQuery<IProblem>({
+  const problems: ProblemItem[] = listData?.problems ?? [];
+
+  // Full problem detail (content, snippets, hints, examples…)
+  const {
+    data: problem,
+    isLoading,
+    isError,
+    error,
+  } = useQuery<IProblemDetail>({
     queryKey: ["problem", slug],
     queryFn: () => fetchProblemDetail(slug),
     enabled: !!slug,
     staleTime: 5 * 60_000,
   });
-  
 
   const handleRun = async (code: string, language: string): Promise<void> => {
     console.log("Run:", { code, language });
-    // After running, switch to output tab on mobile
     setActiveTab("output");
   };
 
@@ -67,18 +74,20 @@ export default function ProblemDetailPage() {
   };
 
   return (
-    <div className="flex flex-col h-dvh">
+    <div className="flex h-dvh flex-col">
+
       {/* ── Header ── */}
-      <header className="flex justify-between items-center px-4 py-1.5 border-b shrink-0">
+      <header className="flex shrink-0 items-center justify-between border-b px-4 py-1.5">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2.5">
-            <Link href="/" className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-xs font-bold">
-              R
-            </Link>
-          </div>
+          <Link
+            href="/"
+            className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground"
+          >
+            R
+          </Link>
           <ProblemListSheet
             currentSlug={slug}
-            problems={problems as ProblemListItem[]}
+            problems={problems}
             isLoading={problemsLoading}
           />
         </div>
@@ -89,79 +98,86 @@ export default function ProblemDetailPage() {
       </header>
 
       {/* ── Desktop: Resizable Panels ── */}
-      <div className="hidden md:flex flex-1 min-h-0">
-      <Group orientation="horizontal" className="flex-1 p-2 gap-2">
-        <Panel defaultSize={40} minSize={30}>
-          <div className="h-full rounded-lg border overflow-hidden">
-            <ProblemPanel problem={currentProblem ?? null} isLoading={isLoading} isError={isError} error={error} />
-          </div>
-        </Panel>
+      <div className="hidden flex-1 min-h-0 md:flex">
+        <Group orientation="horizontal" className="flex-1 gap-2 p-2">
 
-        <Separator className="w-1.5 rounded-full bg-border hover:bg-muted-foreground/30 active:bg-primary transition-colors" />
+          {/* Problem panel */}
+          <Panel defaultSize={40} minSize={28}>
+            <div className="h-full overflow-hidden rounded-lg border">
+              <ProblemPanel
+                problem={problem ?? null}
+                isLoading={isLoading}
+                isError={isError}
+                error={error as Error | null}
+              />
+            </div>
+          </Panel>
 
-        <Panel defaultSize={60} minSize={30}>
-          <Group orientation="vertical" className="gap-2">
-            <Panel defaultSize={65} minSize={40}>
-              <div className="h-full rounded-lg border overflow-hidden">
-                <CodeEditorPanel
-                  codeStubs={currentProblem?.codeStubs}
-                  onRun={handleRun}
-                  onSubmit={handleSubmit}
-                />
-              </div>
-            </Panel>
+          <Separator className="w-1.5 rounded-full bg-border transition-colors hover:bg-muted-foreground/30 active:bg-primary" />
 
-            <Separator className="h-1.5 rounded-full bg-border hover:bg-muted-foreground/30 active:bg-primary transition-colors" />
+          {/* Code + Output */}
+          <Panel defaultSize={60} minSize={30}>
+            <Group orientation="vertical" className="h-full gap-2">
 
-            <Panel defaultSize={35} minSize={15}>
-              <div className="h-full rounded-lg border overflow-hidden">
-                <OutputPanel />
-              </div>
-            </Panel>
-          </Group>
-        </Panel>
-      </Group>
+              <Panel defaultSize={65} minSize={35}>
+                <div className="h-full overflow-hidden rounded-lg border">
+                  <CodeEditorPanel
+                    codeSnippets={problem?.codeSnippets}
+                    onRun={handleRun}
+                    onSubmit={handleSubmit}
+                  />
+                </div>
+              </Panel>
+
+              <Separator className="h-1.5 rounded-full bg-border transition-colors hover:bg-muted-foreground/30 active:bg-primary" />
+
+              <Panel defaultSize={35} minSize={15}>
+                <div className="h-full overflow-hidden rounded-lg border">
+                  <OutputPanel />
+                </div>
+              </Panel>
+
+            </Group>
+          </Panel>
+
+        </Group>
       </div>
 
       {/* ── Mobile: Tab Layout ── */}
-      <div className="flex md:hidden flex-col flex-1 min-h-0">
-        {/* Tab panels — only active one is visible */}
+      <div className="flex flex-1 min-h-0 flex-col md:hidden">
+
+        {/* Active pane */}
         <div className="flex-1 min-h-0 overflow-hidden">
-          {/* Problem tab */}
-          <div className={cn("h-full overflow-hidden", activeTab !== "problem" && "hidden")}>
+          <div className={cn("h-full", activeTab !== "problem" && "hidden")}>
             <ProblemPanel
-              problem={currentProblem ?? null}
+              problem={problem ?? null}
               isLoading={isLoading}
               isError={isError}
-              error={error}
+              error={error as Error | null}
             />
           </div>
-
-          {/* Code tab */}
-          <div className={cn("h-full overflow-hidden", activeTab !== "code" && "hidden")}>
+          <div className={cn("h-full", activeTab !== "code" && "hidden")}>
             <CodeEditorPanel
-              codeStubs={currentProblem?.codeStubs}
+              codeSnippets={problem?.codeSnippets}
               onRun={handleRun}
               onSubmit={handleSubmit}
             />
           </div>
-
-          {/* Output tab */}
-          <div className={cn("h-full overflow-hidden", activeTab !== "output" && "hidden")}>
+          <div className={cn("h-full", activeTab !== "output" && "hidden")}>
             <OutputPanel />
           </div>
         </div>
 
         {/* Bottom tab bar */}
-        <nav className="shrink-0 flex border-t bg-background">
+        <nav className="flex shrink-0 border-t bg-background">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setActiveTab(id)}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-1 py-2.5 text-xs font-medium transition-colors",
+                "flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-xs font-medium transition-colors",
                 activeTab === id
-                  ? "text-primary border-t-2 border-primary -mt-px"
+                  ? "-mt-px border-t-2 border-primary text-primary"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >

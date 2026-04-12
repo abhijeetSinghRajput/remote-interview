@@ -1,58 +1,111 @@
 import { sendError, sendSuccess } from "../utils/response.js";
 import Problem from "../models/Problem.model.js";
+import ProblemDetail from "../models/ProblemDetail.model.js";
+
+const DEFAULT_LIMIT = 100;
+const MAX_LIMIT     = 100;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const parsePositiveInt = (val, fallback) => {
+  const n = parseInt(val, 10);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+};
+
+const parseTags = (raw) => {
+  if (!raw) return [];
+  // handles: ?tags=dp+graph  ?tags=dp,graph  ?tags=dp graph
+  return raw.split(/[+,\s]+/).map((t) => t.trim().toLowerCase()).filter(Boolean);
+};
+
+const normalizeDifficulty = (val) => {
+  if (!val) return null;
+  const s = val.trim();
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); // "EASY" → "Easy"
+};
+
+// ─── GET /problems ─────────────────────────────────────────────────────────────
 
 export const getProblems = async (req, res) => {
-  const page = Math.max(1, parseInt(req.query.page) || 1);
-  const limit = Math.min(50, parseInt(req.query.limit) || 10); // cap at 50
-  const skip = (page - 1) * limit;
-
-  // filters
-  const filter = {};
-  if (req.query.difficulty) filter.difficulty = req.query.difficulty;
-  if (req.query.tag) filter.tags = { $in: [req.query.tag] };
-  if (req.query.search)
-    filter.title = { $regex: req.query.search, $options: "i" };
-
   try {
+    const limit      = Math.min(parsePositiveInt(req.query.limit, DEFAULT_LIMIT), MAX_LIMIT);
+    const skip       = parsePositiveInt(req.query.skip, 0) || 0;
+    const tags       = parseTags(req.query.tags);
+    const difficulty = normalizeDifficulty(req.query.difficulty);
+
+    // ── Filter ────────────────────────────────────────────────────────────────
+    const filter = {};
+
+    if (difficulty) {
+      if (!["Easy", "Medium", "Hard"].includes(difficulty)) {
+        return sendError(res, 400, "Invalid difficulty. Use: Easy | Medium | Hard");
+      }
+      filter.difficulty = difficulty;
+    }
+
+    if (tags.length > 0) {
+      // AND semantics — problem must have ALL requested tags
+      filter["topicTags.slug"] = { $all: tags };
+    }
+
+    // ── Query (lightweight Problem model, no content/snippets) ────────────────
     const [problems, total] = await Promise.all([
-      Problem.find(filter)
-        .select("uuid title slug difficulty tags stats createdAt") // never send testCases/solutions to list view
-        .sort({ createdAt: -1 })
+      Problem.find(filter, {
+        questionFrontendId: 1,
+        title:              1,
+        titleSlug:          1,
+        difficulty:         1,
+        topicTags:          1,
+        isPaidOnly:         1,
+        _id:                0,
+      })
+        .sort({ questionFrontendId: 1 })
         .skip(skip)
-        .limit(limit),
+        .limit(limit)
+        .lean(),
+
       Problem.countDocuments(filter),
     ]);
 
-    sendSuccess(res, {
-      problems,
-      pagination: {
+    return sendSuccess(res, 200, {
+      meta: {
         total,
-        page,
         limit,
-        totalPages: Math.ceil(total / limit),
-        hasNext: page * limit < total,
-        hasPrev: page > 1,
+        skip,
+        returned: problems.length,
+        hasMore:  skip + limit < total,
+        nextSkip: skip + limit < total ? skip + limit : null,
       },
+      problems,
     });
   } catch (error) {
-    console.error("Error fetching problems:", error);
-    sendError(res, "Error fetching problems", 500);
+    console.error("[getProblems]", error);
+    return sendError(res, 500, "Internal server error");
   }
 };
 
-export const getProblemBySlug = async (req, res) => {
-  const { slug } = req.params; // id = uuid
+// ─── GET /problems/:slug ───────────────────────────────────────────────────────
 
+export const getProblemBySlug = async (req, res) => {
   try {
-    const problem = await Problem.findOne({ slug }).select(
-      "-testCases -solutions",
-    );
+    const { slug } = req.params;
+
+    // Uses ProblemDetail — full document with content, examples, snippets etc.
+    const problem = await ProblemDetail
+      .findOne({ titleSlug: slug }, { _id: 0, __v: 0 })
+      .lean();
+
     if (!problem) {
-      return sendError(res, "Problem not found", 404);
+      return sendError(res, 404, `Problem "${slug}" not found`);
     }
-    sendSuccess(res, { problem });
+
+    if (problem.isPaidOnly) {
+      return sendError(res, 403, "This problem is for premium subscribers only");
+    }
+
+    return sendSuccess(res, 200, { problem });
   } catch (error) {
-    console.error("Error fetching problem:", error);
-    sendError(res, "Error fetching problem", 500);
+    console.error("[getProblemBySlug]", error);
+    return sendError(res, 500, "Internal server error");
   }
 };

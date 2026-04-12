@@ -132,6 +132,10 @@
   }
 }
 
+button[data-state="open"] .chevron {
+  transform: rotate(180deg);
+}
+
 @keyframes collapsible-down {
   from {
     height: 0;

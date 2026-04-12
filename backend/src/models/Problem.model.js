@@ -1,62 +1,43 @@
 import mongoose from "mongoose";
 
-const testCaseSchema = new mongoose.Schema({
-  input: { type: String, required: true },
-  output: { type: String, required: true },
-  isHidden: { type: Boolean, default: false },
-  explanation: { type: String },
-});
-
-const codeStubSchema = new mongoose.Schema({
-  language: {
-    type: String,
-    enum: ["javascript", "python", "java", "cpp"],
-    required: true,
-  },
-  starterCode: { type: String, required: true },
-  solutionCode: { type: String },
-});
-
-
-const problemSchema = new mongoose.Schema(
+const TopicTagSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true, trim: true },
-    slug: { type: String, unique: true, lowercase: true, trim: true },
-    // markdown, can include images, code, examples, constraints, etc.
-    description: { type: String, required: true },
-
-    difficulty: {
-      type: String,
-      enum: ["easy", "medium", "hard"],
-      required: true,
-    },
-
-    tags: [{ type: String, trim: true }],
-
-    testCases: [testCaseSchema], // hidden + visible test cases
-
-    codeStubs: [codeStubSchema], // starter code per language
-
-    hints: [{ type: String }],
+    name: String,
+    id: Number,
+    slug: String,
   },
-  { timestamps: true },
+  { _id: false }
 );
 
-// auto-generate slug from title
-problemSchema.pre("save", function (next) {
-  if (this.isModified("title")) {
-    this.slug = this.title
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^\w-]/g, "");
-  }
-  next();
-});
 
+const ProblemSchema = new mongoose.Schema(
+  {
+    questionFrontendId: {
+      type: Number,
+      required: true,
+      unique: true,
+    },
+    title: {
+      type: String,
+      required: true,
+    },
+    titleSlug: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    difficulty: {
+      type: String,
+      enum: ["Easy", "Medium", "Hard"],
+      required: true,
+    },
+    isPaidOnly: {
+      type: Boolean,
+      default: false,
+    },
+    topicTags: [TopicTagSchema],
+  },
+  { timestamps: true }
+);
 
-problemSchema.index({ difficulty: 1 });
-problemSchema.index({ tags: 1 });
-
-const Problem = mongoose.model("Problem", problemSchema);
-
-export default Problem;
+export default mongoose.model("Question", ProblemSchema);

@@ -6,14 +6,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   IconArrowRight,
-  IconBan,
   IconBrain,
   IconChartBar,
   IconCodeblock,
   IconLock,
-  IconMicrophone,
   IconVideo,
-} from "@tabler/icons-react"
+} from "@tabler/icons-react";
 import { Show, SignInButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link"
 import { useTheme } from "next-themes";
@@ -210,6 +208,7 @@ export default function HomePage() {
           </div>
 
           {/* Hero preview card */}
+            <p>{resolvedTheme}</p>
           <div className="relative mx-auto mt-20 max-w-5xl">
             {/* No gradient overlay */}
             <div className="overflow-hidden rounded-2xl border border-muted shadow-2xl backdrop-blur-sm">

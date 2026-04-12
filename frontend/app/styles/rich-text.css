@@ -61,6 +61,10 @@
 .rich-text > :last-child  { margin-bottom: 0; }
 
 /* ── Paragraph ── */
+.dark .rich-text p {
+  color: var(--muted-foreground);
+}
+
 .rich-text p {
   margin-top: 0;
   margin-bottom: 1em;
@@ -81,6 +85,18 @@
 .monaco-editor .margin,
 .monaco-editor-background{
     background: var(--card) !important;
+}
+.rich-text > pre,
+.rich-text :has(.example) + pre {
+  background: oklch(from var(--muted) l c h / 0.3);
+  border: none;
+  border-left: 3px solid var(--muted);
+  border-radius: 0;
+  padding: 0.8rem;
+}
+
+.dark .rich-text :has(.example) + pre {
+  color: var(--muted-foreground);
 }
 
 .rich-text pre {
@@ -119,7 +135,9 @@
   font-style: italic;
 }
 
-.rich-text blockquote p { margin-bottom: 0; }
+.rich-text blockquote p { 
+  margin-bottom: 0; 
+}
 
 /* ── Lists ── */
 .rich-text ul,
@@ -208,7 +226,7 @@
 }
 
 /* ── Strong / Em ── */
-.rich-text strong { font-weight: 600; }
+.rich-text strong { font-weight: 600; color: var(--foreground); }
 .rich-text em     { font-style: italic; }
 .rich-text s      { text-decoration: line-through; color: var(--muted-foreground); }
 
