@@ -29,7 +29,6 @@
 .dark .rich-text pre,
 .dark .rich-text code.hljs                    { background: hsl(var(--muted)); }
 .rich-text {
-  color: var(--foreground);
   font-size: 0.9rem;
   line-height: 1.75;
   word-break: break-word;

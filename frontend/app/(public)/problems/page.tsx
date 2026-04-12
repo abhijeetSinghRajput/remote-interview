@@ -10,8 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchProblemList } from "@/services/problem.service";
 import { IconArrowDown, IconLoader, IconLockFilled, IconSearch, IconX } from "@tabler/icons-react";
-import { ProblemItem } from "@/types/problem";
-import FilterPopover from "@/components/problem/filter-popover";
+import { ProblemListItem } from "@/types/problem";
+import FilterPopover, { Filters } from "@/components/problem/filter-popover";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -50,7 +50,7 @@ function ProblemRow({
   style,
   onClick,
 }: {
-  problem: ProblemItem;
+  problem: ProblemListItem;
   index: number;
   style: React.CSSProperties;
   onClick: () => void;
@@ -129,19 +129,29 @@ function ActivePills({
   onRemove,
 }: {
   filters: Filters;
-  onRemove: (key: keyof Filters) => void;
+  onRemove: (key: keyof Filters, value?: string) => void;
 }) {
   const pills = [
-    filters.difficulty !== "all" && { key: "difficulty" as const, label: filters.difficulty },
-    filters.tag !== "all" && { key: "tag" as const, label: filters.tag },
-    filters.search && { key: "search" as const, label: `"${filters.search}"` },
-  ].filter(Boolean) as { key: keyof Filters; label: string }[];
+    filters.difficulty !== "all" && {
+      key: "difficulty" as const,
+      label: filters.difficulty,
+    },
+    ...filters.tags.map((tag) => ({
+      key: "tags" as const,
+      label: tag,
+      value: tag,
+    })),
+    filters.search && {
+      key: "search" as const,
+      label: `"${filters.search}"`,
+    },
+  ].filter(Boolean) as { key: keyof Filters; label: string; value?: string }[];
 
   if (!pills.length) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {pills.map(({ key, label }) => (
+      {pills.map(({ key, label, value }) => (
         <Badge
           key={key}
           variant="secondary"
@@ -149,7 +159,7 @@ function ActivePills({
         >
           {label}
           <button
-            onClick={() => onRemove(key)}
+            onClick={() => onRemove(key, value)}
             className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10 transition-colors"
           >
             <IconX className="h-2.5 w-2.5" />
@@ -210,7 +220,7 @@ export default function ProblemsPage() {
   const [searchInput, setSearchInput] = useState("");
 
   // ── Accumulated problems (all loaded batches) ──────────────────────────────
-  const [allProblems, setAllProblems] = useState<ProblemItem[]>([]);
+  const [allProblems, setAllProblems] = useState<ProblemListItem[]>([]);
   const [skip, setSkip] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -240,7 +250,7 @@ export default function ProblemsPage() {
         skip,
         limit: PAGE_SIZE,
         difficulty: filters.difficulty,
-        tags: filters.tag,
+        tags: filters.tags,
         search: filters.search,
       }),
     staleTime: 60_000,
@@ -290,10 +300,18 @@ export default function ProblemsPage() {
     resetList({ ...filters, ...partial });
   };
 
-  const removeFilter = (key: keyof Filters) => {
-    const defaults = { difficulty: "all", tags: [], search: "" };
-    const next = { ...filters, [key]: defaults[key] };
-    if (key === "search") setSearchInput("");
+  const removeFilter = (key: keyof Filters, value?: string) => {
+    const next: Filters = { ...filters };
+
+    if (key === "difficulty") next.difficulty = "all";
+    if (key === "search") {
+      next.search = "";
+      setSearchInput("");
+    }
+    if (key === "tags" && value) {
+      next.tags = next.tags.filter((t) => t !== value);
+    }
+
     resetList(next);
   };
 
@@ -351,7 +369,7 @@ export default function ProblemsPage() {
         </div>
 
         {/* Active pills */}
-        {(filters.difficulty !== "all" || filters.tag !== "all" || filters.search) && (
+        {(filters.difficulty !== "all" || filters.tags.length > 0 || filters.search) && (
           <div className="max-w-5xl mx-auto mt-2">
             <ActivePills filters={filters} onRemove={removeFilter} />
           </div>
@@ -367,7 +385,7 @@ export default function ProblemsPage() {
         </div>
       </div>
       {/* ── Virtual list ── */}
-      <div ref={parentRef} className="flex-1 overflow-y-auto">
+      <div ref={parentRef} className="flex-1 overflow-y-auto pb-12">
         {isInitialLoading ? (
           // Skeleton initial load
           (<div className="max-w-5xl mx-auto">

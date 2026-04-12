@@ -56,21 +56,21 @@ const EDITOR_OPTIONS = {
 };
 
 // ── Main Code Editor Panel ───────────────────────────────────────────────
-import type { ICodeStub } from "@/types/model";
+import type { ICodeSnippet } from "@/types/model";
 
 interface CodeEditorPanelProps {
-  codeStubs?: ICodeStub[];
+  codeSnippets?: ICodeSnippet[];
   onRun?: (code: string, language: string) => Promise<void>;
   onSubmit?: (code: string, language: string) => Promise<void>;
 }
 
-export default function CodeEditorPanel({ codeStubs, onRun, onSubmit }: CodeEditorPanelProps) {
+export default function CodeEditorPanel({ codeSnippets, onRun, onSubmit }: CodeEditorPanelProps) {
   const { resolvedTheme } = useTheme();
   const editorRef = useRef(null);
 
-  // Build a map of language to starterCode from codeStubs
-  const stubMap = codeStubs?.reduce((acc, stub) => {
-    acc[stub.language] = stub.starterCode;
+  // Build a map of language to starterCode from codeSnippet
+  const stubMap = codeSnippets?.reduce((acc, stub) => {
+    acc[stub.lang] = stub.code;
     return acc;
   }, {} as Record<string, string>);
 

@@ -1,5 +1,7 @@
 // types/model.ts
 
+import type { ProblemDifficulty, ProblemTag } from "@/types/problem";
+
 export interface IUser {
   _id: string;
   name: string;
@@ -23,16 +25,26 @@ export interface ICodeStub {
   solutionCode?: string;
 }
 
-export interface IProblem {
-  _id: string;
+export interface ICodeSnippet {
+  lang: string;
+  langSlug: string;
+  code: string;
+}
+
+/**
+ * Lightweight problem shape used inside session responses
+ * Returned by session endpoints after populate("problem", ...)
+ */
+export interface ISessionProblem {
+  _id?: string;
+  questionId: number;
+  questionFrontendId: number;
   title: string;
-  slug: string;
-  description: string;
-  difficulty: "easy" | "medium" | "hard";
-  tags: string[];
-  testCases: ITestCase[];
-  codeStubs: ICodeStub[];
-  hints: string[];
+  titleSlug: string;
+  difficulty: ProblemDifficulty;
+  isPaidOnly: boolean;
+  topicTags: ProblemTag[];
+  codeSnippets?: ICodeSnippet[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -40,16 +52,16 @@ export interface IProblem {
 export interface ISession {
   _id: string;
   host: IUser | string;
-  problem: IProblem | string;
-  participant?: IUser | string;
+  problem: ISessionProblem | string;
+  participant?: IUser | string | null;
   status: "active" | "completed";
   callId?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
-export type ISessionDetail = Omit<ISession, "host" | "problem"> & {
+export type ISessionDetail = Omit<ISession, "host" | "problem" | "participant"> & {
   host: IUser;
-  problem: IProblem;
-  participant?: IUser;
+  problem: ISessionProblem;
+  participant?: IUser | null;
 };

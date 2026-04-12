@@ -1,5 +1,11 @@
 import { api } from "@/lib/api";
-import { ProblemItem, ProblemListApiResponse, ProblemListParams, ProblemListResponse } from "@/types/problem";
+import {
+  ProblemDetail,
+  ProblemDetailApiResponse,
+  ProblemListApiResponse,
+  ProblemListParams,
+  ProblemListResponse,
+} from "@/types/problem";
 
 export const fetchProblemList = async (
   params: ProblemListParams
@@ -11,26 +17,18 @@ export const fetchProblemList = async (
       ...(params.difficulty &&
         params.difficulty !== "all" && { difficulty: params.difficulty }),
       ...(params.tags &&
-        params.tags !== "all" && { tags: params.tags }),
+        params.tags.length > 0 && { tags: params.tags.join(",") }),
       ...(params.search &&
-        params.search.trim() && { search: params.search }),
+        params.search.trim() && { search: params.search.trim() }),
     },
   });
 
   return data.message;
 };
 
-export interface ProblemDetailApiResponse {
-  success: boolean;
-  statusCode: number;
-  message: {
-    problem: ProblemItem;
-  };
-}
-
-export const fetchProblemDetail = async (slug: string) => {
-  const { data } = await api.get<ProblemDetailApiResponse>(
-    `/problems/${slug}`
-  );
+export const fetchProblemDetail = async (
+  slug: string
+): Promise<ProblemDetail> => {
+  const { data } = await api.get<ProblemDetailApiResponse>(`/problems/${slug}`);
   return data.message.problem;
 };

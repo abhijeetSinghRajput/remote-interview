@@ -1,18 +1,21 @@
-"use client";;
+"use client";
+
 import "@/app/styles/rich-text.css";
 import { useEffect, useState } from "react";
-import type { IProblemDetail } from "@/types/problem.types";
+import type { ProblemDetail } from "@/types/problem";
 import { unified } from "unified";
 import rehypeParse from "rehype-parse";
 import rehypeHighlight from "rehype-highlight";
 import rehypeStringify from "rehype-stringify";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { IconTag } from "@tabler/icons-react";
 import ProblemPanelSkeleton from "@/components/skeleton/problem-panel-skeleton";
 import HintsTabs from "@/components/problem/hint-tabs";
 import SimilarQuestions from "@/components/problem/similar-questions";
+import { cn } from "@/lib/utils";
 
 // ── Difficulty config ─────────────────────────────────────────────────────────
 
@@ -34,13 +37,16 @@ const DIFFICULTY_CONFIG = {
   },
 } as const;
 
-// ── Rich-text renderer (processes the HTML content field) ─────────────────────
+// ── Rich-text renderer ────────────────────────────────────────────────────────
 
 function RichTextRenderer({ content }: { content: string }) {
   const [html, setHtml] = useState("");
 
   useEffect(() => {
-    if (!content) return;
+    if (!content) {
+      setHtml("");
+      return;
+    }
 
     unified()
       .use(rehypeParse, { fragment: true })
@@ -52,18 +58,17 @@ function RichTextRenderer({ content }: { content: string }) {
 
   if (!html) return null;
 
-  return (
-    <div className="rich-text" dangerouslySetInnerHTML={{ __html: html }} />
-  );
+  return <div className="rich-text" dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface ProblemPanelProps {
-  problem: IProblemDetail | null;
+  problem: ProblemDetail | null;
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
+  onRetry?: () => void;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -73,52 +78,57 @@ export default function ProblemPanel({
   isLoading,
   isError,
   error,
+  onRetry,
 }: ProblemPanelProps) {
-
   if (isLoading) return <ProblemPanelSkeleton />;
 
   if (isError) {
     return (
-      <div className="p-5">
+      <div className="flex flex-col gap-4 p-5">
         <Alert variant="destructive">
           <AlertDescription>
             {error?.message ?? "Failed to load problem."}
           </AlertDescription>
         </Alert>
+
+        {onRetry && (
+          <Button onClick={onRetry} variant="outline" className="w-full">
+            Retry
+          </Button>
+        )}
       </div>
     );
   }
 
   if (!problem) return null;
 
-  const diffConfig = DIFFICULTY_CONFIG[problem.difficulty];
+  const diffConfig =
+    problem.difficulty ? DIFFICULTY_CONFIG[problem.difficulty] : undefined;
 
   return (
     <div className="flex h-full max-h-full flex-col overflow-hidden bg-background">
-
-      {/* ── Sticky header ── */}
       <div className="sticky top-0 z-10 shrink-0 bg-card px-5 pb-4 pt-5">
-
-        {/* Title + difficulty */}
         <div className="mb-3 flex items-start justify-between gap-3">
           <h2 className="text-base font-semibold leading-snug">
-            <span className="mr-2 font-mono text-sm text-muted-foreground">
-              {problem.questionFrontendId}.
-            </span>
+            {problem.questionFrontendId ? (
+              <span className="mr-2 font-mono text-sm text-muted-foreground">
+                {problem.questionFrontendId}.
+              </span>
+            ) : null}
             {problem.title}
           </h2>
-          {diffConfig && (
+
+          {diffConfig ? (
             <Badge
               variant="outline"
               className={cn("shrink-0 text-xs font-medium", diffConfig.className)}
             >
               {diffConfig.label}
             </Badge>
-          )}
+          ) : null}
         </div>
 
-        {/* Topic tags */}
-        {problem.topicTags.length > 0 && (
+        {problem.topicTags && problem.topicTags.length > 0 ? (
           <div className="flex flex-wrap items-center gap-1.5">
             <IconTag className="h-3 w-3 text-muted-foreground" />
             {problem.topicTags.map((tag) => (
@@ -127,19 +137,15 @@ export default function ProblemPanel({
               </Badge>
             ))}
           </div>
-        )}
+        ) : null}
       </div>
 
       <Separator />
 
-      {/* ── Scrollable body ── */}
       <div className="flex-1 overflow-y-auto px-5 py-4">
+        <RichTextRenderer content={problem.content || problem.description || ""} />
 
-        {/* Main HTML content (description + examples from LeetCode) */}
-        <RichTextRenderer content={problem.content} />
-
-        {/* Constraints */}
-        {problem.constraints.length > 0 && (
+        {problem.constraints && problem.constraints.length > 0 ? (
           <div className="mt-6">
             <p className="mb-2 text-sm font-semibold">Constraints</p>
             <ul className="space-y-1 pl-4">
@@ -152,22 +158,16 @@ export default function ProblemPanel({
               ))}
             </ul>
           </div>
-        )}
+        ) : null}
 
-        {/* Hints */}
-        <HintsTabs 
-          hints={problem.hints} 
-          className="py-8" 
-        />
-        <SimilarQuestions
-          questions={problem.similarQuestions}
-        />
+        {problem.hints && problem.hints.length > 0 ? (
+          <HintsTabs hints={problem.hints} className="py-8" />
+        ) : null}
+
+        {problem.similarQuestions && problem.similarQuestions.length > 0 ? (
+          <SimilarQuestions questions={problem.similarQuestions} />
+        ) : null}
       </div>
     </div>
   );
-}
-
-// re-export cn so this file compiles standalone (shadcn pattern)
-function cn(...inputs: (string | undefined | false | null)[]) {
-  return inputs.filter(Boolean).join(" ");
 }

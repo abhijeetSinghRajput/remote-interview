@@ -14,8 +14,12 @@ import { IconFileText, IconCode, IconTerminal2 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { fetchProblemDetail, fetchProblemList } from "@/services/problem.service";
-import type { IProblemDetail } from "@/types/problem.types";
-import type { ProblemItem } from "@/services/problem.service";
+import type {
+  ProblemDetail,
+  ProblemDifficultyFilter,
+  ProblemListItem,
+  ProblemListParams,
+} from "@/types/problem";
 
 // ── Mobile tab config ──────────────────────────────────────────────────────────
 
@@ -39,16 +43,22 @@ export default function ProblemDetailPage() {
         : "";
 
   const [activeTab, setActiveTab] = useState<TabId>("problem");
+  const [filterParams, setFilterParams] = useState<
+    Pick<ProblemListParams, "difficulty" | "tags" | "search">
+  >({});
 
-  // Lightweight list for the sidebar sheet
-  const { data: listData, isLoading: problemsLoading } = useQuery({
-    queryKey: ["problems-list"],
-    queryFn: () => fetchProblemList({ limit: 100, skip: 0 }),
-    staleTime: Infinity,
-    gcTime: Infinity,
+  // Lightweight list for the sidebar sheet with filter support
+  const { data: listData, isLoading: problemsLoading, refetch: refetchList } = useQuery({
+    queryKey: ["problems-list", filterParams],
+    queryFn: () => fetchProblemList({
+      limit: 100,
+      skip: 0,
+      ...filterParams
+    }),
+    staleTime: 0, // Always refetch when filter changes
   });
 
-  const problems: ProblemItem[] = listData?.problems ?? [];
+  const problems: ProblemListItem[] = listData?.problems ?? [];
 
   // Full problem detail (content, snippets, hints, examples…)
   const {
@@ -56,11 +66,14 @@ export default function ProblemDetailPage() {
     isLoading,
     isError,
     error,
-  } = useQuery<IProblemDetail>({
+    refetch: refetchProblem,
+  } = useQuery<ProblemDetail>({
     queryKey: ["problem", slug],
     queryFn: () => fetchProblemDetail(slug),
     enabled: !!slug,
     staleTime: 5 * 60_000,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const handleRun = async (code: string, language: string): Promise<void> => {
@@ -71,6 +84,15 @@ export default function ProblemDetailPage() {
   const handleSubmit = async (code: string, language: string): Promise<void> => {
     console.log("Submit:", { code, language });
     setActiveTab("output");
+  };
+
+  const handleApplyFilter = (
+    params: Pick<ProblemListParams, "difficulty" | "tags" | "search">
+  ) => {
+    setFilterParams(params);
+  };
+  const handleRetry = () => {
+    refetchProblem();
   };
 
   return (
@@ -89,6 +111,7 @@ export default function ProblemDetailPage() {
             currentSlug={slug}
             problems={problems}
             isLoading={problemsLoading}
+            onFilterChange={handleApplyFilter}
           />
         </div>
         <div className="flex items-center gap-2">
@@ -109,6 +132,7 @@ export default function ProblemDetailPage() {
                 isLoading={isLoading}
                 isError={isError}
                 error={error as Error | null}
+                onRetry={handleRetry}
               />
             </div>
           </Panel>
@@ -154,6 +178,7 @@ export default function ProblemDetailPage() {
               isLoading={isLoading}
               isError={isError}
               error={error as Error | null}
+              onRetry={handleRetry}
             />
           </div>
           <div className={cn("h-full", activeTab !== "code" && "hidden")}>

@@ -1,32 +1,49 @@
-export interface ProblemListParams {
-  skip?: number;
-  limit?: number;
-  difficulty?: string;
-  tags?: string;
-  search?: string;
+import { ICodeSnippet } from "./model";
+
+export type ProblemDifficulty = "Easy" | "Medium" | "Hard";
+export type ProblemDifficultyFilter = ProblemDifficulty | "all";
+
+export interface SimilarProblem {
+  title: string;
+  titleSlug: string;
+  difficulty: ProblemDifficulty;
+  isPaidOnly?: boolean;
 }
 
-export interface TopicTag {
+export interface ProblemTag {
   name: string;
-  id: string;
+  id: string | number;
   slug: string;
 }
 
-export interface SimilarQuestion {
-  title: string;
-  titleSlug: string;
-  difficulty: string;
-  isPaidOnly?: boolean;
-};
+export interface ProblemListParams {
+  skip?: number;
+  limit?: number;
+  difficulty?: ProblemDifficultyFilter;
+  tags?: string[];
+  search?: string;
+}
 
-export interface ProblemItem {
-  questionFrontendId: number; // FIXED
-  questionId: number,
+/** item returned by GET /problems */
+export interface ProblemListItem {
+  questionFrontendId: number;
   title: string;
   titleSlug: string;
-  difficulty: "Easy" | "Medium" | "Hard";
-  isPaidOnly: boolean; // ADDED
-  topicTags: TopicTag[]; // FIXED
+  difficulty: ProblemDifficulty;
+  isPaidOnly: boolean;
+  topicTags: ProblemTag[];
+}
+
+/** full problem returned by GET /problems/:slug */
+export interface ProblemDetail extends ProblemListItem {
+  questionId: number;
+  codeSnippets: ICodeSnippet[];
+
+  content?: string;
+  description?: string;
+  constraints?: string[];
+  hints?: string[];
+  similarQuestions?: SimilarProblem[];
 }
 
 export interface ProblemListMeta {
@@ -40,14 +57,17 @@ export interface ProblemListMeta {
 
 export interface ProblemListResponse {
   meta: ProblemListMeta;
-  problems: ProblemItem[];
+  problems: ProblemListItem[];
 }
 
-/**
- * Full API response shape
- */
-export interface ProblemListApiResponse {
+export interface ApiResponse<T> {
   success: boolean;
   statusCode: number;
-  message: ProblemListResponse;
+  message: T;
 }
+
+export type ProblemListApiResponse = ApiResponse<ProblemListResponse>;
+
+export type ProblemDetailApiResponse = ApiResponse<{
+  problem: ProblemDetail;
+}>;

@@ -15,12 +15,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { IconSearch, IconLayoutList, IconExternalLink } from "@tabler/icons-react";
-import { ProblemItem } from "@/types/problem";
+import { ProblemListItem, ProblemListParams } from "@/types/problem";
 
 interface ProblemListSheetProps {
   currentSlug?: string; // highlights active problem
-  problems: ProblemItem[];
+  problems: ProblemListItem[];
   isLoading: boolean;
+  onFilterChange?: (params: Pick<ProblemListParams, "difficulty" | "tags" | "search">) => void;
 }
 
 
@@ -29,6 +30,12 @@ const DIFF = {
   Easy: { label: "Easy", dot: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400" },
   Medium: { label: "Medium", dot: "bg-amber-500", text: "text-amber-600 dark:text-amber-400" },
   Hard: { label: "Hard", dot: "bg-rose-500", text: "text-rose-600 dark:text-rose-400" },
+} as const;
+
+// Normalize difficulty for case-insensitive matching
+const getDiffConfig = (difficulty: string) => {
+  const normalized = difficulty.charAt(0).toUpperCase() + difficulty.slice(1).toLowerCase();
+  return DIFF[normalized as keyof typeof DIFF] || DIFF.Medium;
 };
 
 // ── Skeleton ──────────────────────────────────────────────────────────────
@@ -47,7 +54,12 @@ function ListSkeleton() {
 }
 
 // ── Main component ────────────────────────────────────────────────────────
-export default function ProblemListSheet({ currentSlug, problems, isLoading }: ProblemListSheetProps) {
+export default function ProblemListSheet({
+  currentSlug,
+  problems,
+  isLoading,
+  onFilterChange,
+}: ProblemListSheetProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [diffFilter, setDiffFilter] = useState<"All" | "Easy" | "Medium" | "Hard">("All");
@@ -104,7 +116,14 @@ export default function ProblemListSheet({ currentSlug, problems, isLoading }: P
             {(["All", "Easy", "Medium", "Hard"] as const).map((d) => (
               <button
                 key={d}
-                onClick={() => setDiffFilter(d)}
+                onClick={() => {
+                  setDiffFilter(d);
+                  const newDifficulty = d === "All" ? undefined : d;
+                  onFilterChange?.({
+                    difficulty: newDifficulty,
+                    search: search || undefined,
+                  });
+                }}
                 className={cn(
                   "text-[11px] px-2 py-0.5 rounded-full border transition-colors",
                   diffFilter === d
@@ -143,7 +162,7 @@ export default function ProblemListSheet({ currentSlug, problems, isLoading }: P
             ) : (
               <div className="py-1">
                 {filtered.map((p) => {
-                  const cfg = DIFF[p.difficulty];
+                  const cfg = getDiffConfig(p.difficulty);
                   const isActive = p.titleSlug === currentSlug;
 
                   return (
@@ -197,9 +216,9 @@ export default function ProblemListSheet({ currentSlug, problems, isLoading }: P
           )}
         </SheetContent>
       </Sheet>
-      <Button 
-        variant="outline" 
-        size="icon" 
+      <Button
+        variant="outline"
+        size="icon"
         asChild
       >
         <Link href="/problems" className="flex items-center gap-1">

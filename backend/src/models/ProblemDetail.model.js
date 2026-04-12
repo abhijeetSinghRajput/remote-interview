@@ -39,12 +39,12 @@ const ProblemDetailSchema = new mongoose.Schema(
     difficulty:         { type: String, enum: ["Easy", "Medium", "Hard"], required: true },
     isPaidOnly:         { type: Boolean, default: false },
 
-    content:    { type: String, required: true },
-    examples:   [ExampleSchema],
-    constraints:[String],
-    topicTags:  [TopicTagSchema],
-    hints:      [String],
-    codeSnippets:[CodeSnippetSchema],
+    content:      { type: String, required: true },
+    examples:     [ExampleSchema],
+    constraints:  [String],
+    topicTags:    [TopicTagSchema],
+    hints:        [String],
+    codeSnippets: [CodeSnippetSchema],
 
     functionMeta: {
       name:       String,

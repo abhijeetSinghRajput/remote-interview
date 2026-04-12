@@ -1,4 +1,5 @@
 "use client";
+
 import CodeEditorPanel from "@/app/(public)/problems/[slug]/code-editor-panel";
 import OutputPanel from "@/app/(public)/problems/[slug]/output-panel";
 import ProblemPanel from "@/app/(public)/problems/[slug]/problem-panel";
@@ -6,7 +7,9 @@ import ProblemPanel from "@/app/(public)/problems/[slug]/problem-panel";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { cn } from "@/lib/utils";
 import { endSession, getSessionById, joinSession } from "@/services/session.service";
+import { fetchProblemDetail } from "@/services/problem.service";
 import { ISession, ISessionDetail } from "@/types/model";
+import type { ProblemDetail } from "@/types/problem";
 import { UserButton, useUser } from "@clerk/nextjs";
 import {
   IconCode,
@@ -57,21 +60,46 @@ export default function SessionDetailPage() {
   const [chatSheetOpen, setChatSheetOpen] = useState(false);
   const [mediumProblemTab, setMediumProblemTab] = useState<"description" | "video">("description");
   const [desktopRightPanel, setDesktopRightPanel] = useState<"video" | "chat" | null>("video");
+
   const toggleDesktopRightPanel = (panel: "video" | "chat") => {
     setDesktopRightPanel((prev) => (prev === panel ? null : panel));
   };
+
   const { user, isLoaded } = useUser();
 
-  const { data: currentSession, isLoading, isError, error } = useQuery<ISessionDetail>({
+  const {
+    data: currentSession,
+    isLoading: isSessionLoading,
+    isError: isSessionError,
+    error: sessionError,
+  } = useQuery<ISessionDetail>({
     queryKey: ["session", sessionId],
     queryFn: () => getSessionById(sessionId),
     enabled: !!sessionId,
     staleTime: 5 * 60_000,
   });
 
-  const { host, problem } = currentSession || {};
-  const isHost = user?.id === host?.clerkId;
-  const isParticipant = typeof currentSession?.participant === "object" && user?.id === currentSession.participant.clerkId;
+  const { host, problem: sessionProblem } = currentSession || {};
+  const isHost = Boolean(user?.id && host?.clerkId && user.id === host.clerkId);
+  const isParticipant = Boolean(
+  user?.id &&
+  currentSession?.participant &&
+  typeof currentSession.participant === "object" &&
+  user.id === currentSession.participant.clerkId
+);
+
+  const {
+    data: fullProblem,
+    isLoading: isProblemLoading,
+    isError: isProblemError,
+    error: problemError,
+    refetch: refetchProblem,
+  } = useQuery<ProblemDetail>({
+    queryKey: ["problem-detail", sessionProblem?.titleSlug],
+    queryFn: () => fetchProblemDetail(sessionProblem!.titleSlug),
+    enabled: !!sessionProblem?.titleSlug,
+    staleTime: 5 * 60_000,
+  });
 
   const {
     streamClient,
@@ -79,39 +107,35 @@ export default function SessionDetailPage() {
     chatClient,
     channel,
     isLoading: isInitializingCall,
-  } = useStreamClient(currentSession as ISession, isLoading, isHost, isParticipant);
+  } = useStreamClient(currentSession as ISession, isSessionLoading, isHost, isParticipant);
 
   const joinSessionMutation = useMutation({
     mutationKey: ["join-session", sessionId],
     mutationFn: (id: string) => joinSession(id),
     onSuccess: () => toast.success("Joined session successfully"),
     onError: (error: any) => {
-      const message =
-        error?.response?.data?.message || "Failed to join session";
+      const message = error?.response?.data?.message || "Failed to join session";
       toast.error(message);
-    }
+    },
   });
 
   const endSessionMutation = useMutation({
     mutationKey: ["end-session", sessionId],
     mutationFn: async (id: string) => {
-      setIsLeavingSession(true); // 🔥 important
+      setIsLeavingSession(true);
       return endSession(id);
     },
     onSuccess: () => {
       router.push("/dashboard");
     },
     onError: () => {
-      setIsLeavingSession(false); // fallback
+      setIsLeavingSession(false);
     },
   });
 
-
-  // auto join the session if user is not host or participant
   useEffect(() => {
     if (!isLoaded || !user || !currentSession) return;
     if (isHost || isParticipant) return;
-
     joinSessionMutation.mutate(sessionId);
   }, [
     sessionId,
@@ -124,34 +148,42 @@ export default function SessionDetailPage() {
   ]);
 
   useEffect(() => {
-    if (!currentSession || isLoading) return;
+    if (!currentSession || isSessionLoading) return;
     if (currentSession.status !== "active") {
       router.push("/dashboard");
     }
-  }, [currentSession, isLoading, router]);
+  }, [currentSession, isSessionLoading, router]);
 
   if (!isLoaded) {
     return (
-      <div className="h-dvh flex items-center justify-center">
+      <div className="flex h-dvh items-center justify-center">
         <IconLoader className="size-5 animate-spin" />
       </div>
     );
   }
 
-  const handleRun = async (code: string, language: string) => { };
-  const handleSubmit = async (code: string, language: string) => { };
+  const combinedLoading = isSessionLoading || isProblemLoading;
+  const combinedError = isSessionError || isProblemError;
+  const combinedErrorValue =
+    (problemError as Error | null) ?? (sessionError as Error | null) ?? null;
+
+  const handleRun = async (_code: string, _language: string) => { };
+  const handleSubmit = async (_code: string, _language: string) => { };
 
   return (
-    <div className="flex flex-col h-dvh">
-      {/* ── Header ── */}
-      <header className="flex justify-between items-center px-4 py-1.5 border-b shrink-0">
+    <div className="flex h-dvh flex-col">
+      <header className="flex shrink-0 items-center justify-between border-b px-4 py-1.5">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2.5">
-            <Link href="/" className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-xs font-bold">
+            <Link
+              href="/"
+              className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-xs font-bold"
+            >
               R
             </Link>
           </div>
         </div>
+
         <div className="flex items-center gap-2">
           <EndSessionButton
             onConfim={() => endSessionMutation.mutate(sessionId)}
@@ -163,15 +195,11 @@ export default function SessionDetailPage() {
         </div>
       </header>
 
-      {/* ── Desktop: Problem | Code/Output | Collapsible right sidebar ── */}
-      {/* ── Medium screens: Problem tabs | Code + Output ── */}
-      <div className="hidden md:flex lg:hidden flex-1 min-h-0 p-2 gap-2">
+      <div className="hidden flex-1 min-h-0 gap-2 p-2 md:flex lg:hidden">
         <Group orientation="horizontal" className="flex-1 h-full gap-2">
-          {/* Left: Problem area with tabs */}
           <Panel defaultSize={36} minSize={28}>
-            <div className="flex h-full flex-col rounded-xl border bg-card overflow-hidden">
-              {/* Top bar */}
-              <div className="flex items-center justify-between gap-3 border-b px-3 py-2 shrink-0">
+            <div className="flex h-full flex-col overflow-hidden rounded-xl border bg-card">
+              <div className="flex shrink-0 items-center justify-between gap-3 border-b px-3 py-2">
                 <Tabs
                   value={mediumProblemTab}
                   onValueChange={(v) => setMediumProblemTab(v as "description" | "video")}
@@ -200,15 +228,15 @@ export default function SessionDetailPage() {
                 </Button>
               </div>
 
-              {/* Body */}
               <div className="min-h-0 flex-1 overflow-hidden">
                 {mediumProblemTab === "description" ? (
                   <div className="h-full">
                     <ProblemPanel
-                      problem={problem ?? null}
-                      isLoading={isLoading}
-                      isError={isError}
-                      error={error}
+                      problem={fullProblem ?? null}
+                      isLoading={combinedLoading}
+                      isError={combinedError}
+                      error={combinedErrorValue}
+                      onRetry={() => refetchProblem()}
                     />
                   </div>
                 ) : (
@@ -228,25 +256,24 @@ export default function SessionDetailPage() {
             </div>
           </Panel>
 
-          <Separator className="w-1.5 rounded-full bg-border hover:bg-muted-foreground/30 active:bg-primary transition-colors" />
+          <Separator className="w-1.5 rounded-full bg-border transition-colors hover:bg-muted-foreground/30 active:bg-primary" />
 
-          {/* Right: code + output */}
           <Panel defaultSize={64} minSize={40}>
             <Group orientation="vertical" className="h-full gap-2">
               <Panel defaultSize={62} minSize={38}>
-                <div className="h-full rounded-xl border overflow-hidden bg-card">
+                <div className="h-full overflow-hidden rounded-xl border bg-card">
                   <CodeEditorPanel
-                    codeStubs={problem?.codeStubs}
+                    codeSnippets={fullProblem?.codeSnippets}
                     onRun={handleRun}
                     onSubmit={handleSubmit}
                   />
                 </div>
               </Panel>
 
-              <Separator className="h-1.5 rounded-full bg-border hover:bg-muted-foreground/30 active:bg-primary transition-colors" />
+              <Separator className="h-1.5 rounded-full bg-border transition-colors hover:bg-muted-foreground/30 active:bg-primary" />
 
               <Panel defaultSize={38} minSize={24}>
-                <div className="h-full rounded-xl border overflow-hidden bg-card">
+                <div className="h-full overflow-hidden rounded-xl border bg-card">
                   <OutputPanel />
                 </div>
               </Panel>
@@ -254,9 +281,8 @@ export default function SessionDetailPage() {
           </Panel>
         </Group>
 
-        {/* Chat sheet */}
         <Sheet open={chatSheetOpen} onOpenChange={setChatSheetOpen}>
-          <SheetContent side="left" className="w-95 sm:w-105 p-0">
+          <SheetContent side="left" className="w-95 p-0 sm:w-105">
             <div className="flex h-full flex-col">
               <SheetHeader className="border-b px-4 py-3">
                 <SheetTitle>Session Chat</SheetTitle>
@@ -264,10 +290,7 @@ export default function SessionDetailPage() {
 
               <div className="min-h-0 flex-1 overflow-hidden">
                 {!isLeavingSession && (
-                  <ChatPanel
-                    chatClient={chatClient}
-                    channel={channel}
-                  />
+                  <ChatPanel chatClient={chatClient} channel={channel} />
                 )}
               </div>
             </div>
@@ -275,39 +298,39 @@ export default function SessionDetailPage() {
         </Sheet>
       </div>
 
-      <div className="hidden lg:flex flex-1 min-h-0 p-2 gap-2">
-        {/* Left + Center workspace */}
-        <div className="flex-1 min-w-0">
+      <div className="hidden flex-1 min-h-0 gap-2 p-2 lg:flex">
+        <div className="min-w-0 flex-1">
           <Group orientation="horizontal" className="h-full gap-2">
             <Panel defaultSize={34} minSize={24}>
-              <div className="h-full rounded-xl border overflow-hidden bg-card">
+              <div className="h-full overflow-hidden rounded-xl border bg-card">
                 <ProblemPanel
-                  problem={problem ?? null}
-                  isLoading={isLoading}
-                  isError={isError}
-                  error={error}
+                  problem={fullProblem ?? null}
+                  isLoading={combinedLoading}
+                  isError={combinedError}
+                  error={combinedErrorValue}
+                  onRetry={() => refetchProblem()}
                 />
               </div>
             </Panel>
 
-            <Separator className="w-1.5 rounded-full bg-border hover:bg-muted-foreground/30 active:bg-primary transition-colors" />
+            <Separator className="w-1.5 rounded-full bg-border transition-colors hover:bg-muted-foreground/30 active:bg-primary" />
 
             <Panel defaultSize={66} minSize={38}>
               <Group orientation="vertical" className="h-full gap-2">
                 <Panel defaultSize={68} minSize={42}>
-                  <div className="h-full rounded-xl border overflow-hidden bg-card">
+                  <div className="h-full overflow-hidden rounded-xl border bg-card">
                     <CodeEditorPanel
-                      codeStubs={problem?.codeStubs}
+                      codeSnippets={fullProblem?.codeSnippets}
                       onRun={handleRun}
                       onSubmit={handleSubmit}
                     />
                   </div>
                 </Panel>
 
-                <Separator className="h-1.5 rounded-full bg-border hover:bg-muted-foreground/30 active:bg-primary transition-colors" />
+                <Separator className="h-1.5 rounded-full bg-border transition-colors hover:bg-muted-foreground/30 active:bg-primary" />
 
                 <Panel defaultSize={32} minSize={16}>
-                  <div className="h-full rounded-xl border overflow-hidden bg-card">
+                  <div className="h-full overflow-hidden rounded-xl border bg-card">
                     <OutputPanel />
                   </div>
                 </Panel>
@@ -316,16 +339,14 @@ export default function SessionDetailPage() {
           </Group>
         </div>
 
-        {/* Right collapsible sidebar */}
         <div className="flex min-h-0 shrink-0">
-          {/* Expanded panel */}
           <div
             className={cn(
               "overflow-hidden transition-[width,opacity] duration-300 ease-out",
-              desktopRightPanel ? "w-90 opacity-100 mr-2" : "w-0 opacity-0"
+              desktopRightPanel ? "mr-2 w-90 opacity-100" : "w-0 opacity-0"
             )}
           >
-            <div className="h-full w-90 rounded-xl border bg-card overflow-hidden">
+            <div className="h-full w-90 overflow-hidden rounded-xl border bg-card">
               {desktopRightPanel === "video" && !isLeavingSession && (
                 <VideoCallPanel
                   isLoading={isInitializingCall}
@@ -337,27 +358,21 @@ export default function SessionDetailPage() {
               )}
 
               {desktopRightPanel === "chat" && !isLeavingSession && (
-                <ChatPanel
-                  chatClient={chatClient}
-                  channel={channel}
-                />
+                <ChatPanel chatClient={chatClient} channel={channel} />
               )}
             </div>
           </div>
 
-          {/* Slim icon rail */}
-          <div
-            className="flex h-full w-12 flex-col items-center justify-center gap-2 rounded-xl border bg-muted/50 px-1 py-2"
-          >
+          <div className="flex h-full w-12 flex-col items-center justify-center gap-2 rounded-xl border bg-muted/50 px-1 py-2">
             <Button
               onClick={() => toggleDesktopRightPanel("video")}
               title="Video"
               variant={desktopRightPanel === "video" ? "default" : "outline"}
               className={cn(
-                "max-h-40 h-full  p-2",
+                "h-full max-h-40 p-2",
                 desktopRightPanel === "chat" && "text-muted-foreground/60 hover:text-muted-foreground"
               )}
-              style={{writingMode: "vertical-rl"}}
+              style={{ writingMode: "vertical-rl" }}
             >
               <IconVideoFilled className="size-4.5 rotate-90" />
               Video
@@ -365,13 +380,13 @@ export default function SessionDetailPage() {
 
             <Button
               onClick={() => toggleDesktopRightPanel("chat")}
-              variant={desktopRightPanel === "chat" ? "default" : "outline"}
               title="Chat"
+              variant={desktopRightPanel === "chat" ? "default" : "outline"}
               className={cn(
-                "max-h-40 h-full p-2",
+                "h-full max-h-40 p-2",
                 desktopRightPanel === "video" && "text-muted-foreground/60 hover:text-muted-foreground"
               )}
-              style={{writingMode: "vertical-rl"}}
+              style={{ writingMode: "vertical-rl" }}
             >
               <IconMessageCircleFilled className="size-4.5 rotate-90" />
               Chat
@@ -380,21 +395,21 @@ export default function SessionDetailPage() {
         </div>
       </div>
 
-      {/* ── Mobile: Tab Layout ── */}
-      <div className="flex md:hidden flex-col flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 flex-col md:hidden">
         <div className="flex-1 min-h-0 overflow-hidden">
           <div className={cn("h-full overflow-hidden", activeTab !== "problem" && "hidden")}>
             <ProblemPanel
-              problem={problem ?? null}
-              isLoading={isLoading}
-              isError={isError}
-              error={error}
+              problem={fullProblem ?? null}
+              isLoading={combinedLoading}
+              isError={combinedError}
+              error={combinedErrorValue}
+              onRetry={() => refetchProblem()}
             />
           </div>
 
           <div className={cn("h-full overflow-hidden", activeTab !== "code" && "hidden")}>
             <CodeEditorPanel
-              codeStubs={problem?.codeStubs}
+              codeSnippets={fullProblem?.codeSnippets}
               onRun={handleRun}
               onSubmit={handleSubmit}
             />
@@ -403,6 +418,7 @@ export default function SessionDetailPage() {
           <div className={cn("h-full overflow-hidden", activeTab !== "output" && "hidden")}>
             <OutputPanel />
           </div>
+
           {activeTab === "video" && !isLeavingSession && (
             <div className="h-full overflow-hidden">
               <VideoCallPanel
@@ -422,16 +438,15 @@ export default function SessionDetailPage() {
           )}
         </div>
 
-        {/* Bottom tab bar */}
-        <nav className="shrink-0 flex border-t bg-background">
+        <nav className="flex shrink-0 border-t bg-background">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setActiveTab(id)}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-1 pt-4 pb-6 text-xs font-medium transition-colors",
+                "flex flex-1 flex-col items-center justify-center gap-1 pt-4 pb-6 text-xs font-medium transition-colors",
                 activeTab === id
-                  ? "text-primary border-t-4 bg-primary/10 border-primary -mt-px"
+                  ? "-mt-px border-t-4 border-primary bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >

@@ -18,8 +18,8 @@ import { IconAdjustmentsHorizontalFilled, IconGauge, IconRotate, IconTag, IconX 
 import { Badge } from "../ui/badge";
 import { Checkbox } from "../ui/checkbox";
 
-interface Filters {
-    difficulty: string;
+export interface Filters {
+    difficulty: "all" | "Easy" | "Medium" | "Hard";
     tags: string[];
     search: string;
 }
@@ -49,7 +49,7 @@ function FilterPopover({
     };
 
     const reset = () => {
-        const clean = { difficulty: "all", tags: [], search: "" };
+        const clean: Filters = { difficulty: "all", tags: [], search: "" };
         setLocal(clean);
         onReset();
         setOpen(false);
@@ -106,16 +106,18 @@ function FilterPopover({
                         </div>
                         <Select
                             value={local.difficulty}
-                            onValueChange={(v) => setLocal((f) => ({ ...f, difficulty: v }))}
+                            onValueChange={(v: Filters["difficulty"]) =>
+                                setLocal((f) => ({ ...f, difficulty: v }))
+                            }
                         >
                             <SelectTrigger className="h-8 flex-1 text-xs">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All levels</SelectItem>
-                                <SelectItem value="easy">Easy</SelectItem>
-                                <SelectItem value="medium">Medium</SelectItem>
-                                <SelectItem value="hard">Hard</SelectItem>
+                                <SelectItem value="Easy">Easy</SelectItem>
+                                <SelectItem value="Medium">Medium</SelectItem>
+                                <SelectItem value="Hard">Hard</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

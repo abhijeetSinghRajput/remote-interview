@@ -25,8 +25,8 @@ function ActiveSessionCard({
   const spotsLeft = session.participant ? 0 : 1;
 
   const isUserInSession = (session: ISession) => {
-    const participantId = typeof session.participant === "object" ? session?.participant.clerkId : null;
-    const hostId = typeof session.host === "object" ? session?.host.clerkId : null;
+    const participantId = typeof session.participant === "object" && session.participant !== null ? session.participant.clerkId : null;
+    const hostId = typeof session.host === "object" && session.host !== null ? session.host.clerkId : null;
 
     if(participantId && participantId === user?.id) return true;
     if(hostId && hostId === user?.id) return true;
