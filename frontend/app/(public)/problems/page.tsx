@@ -116,10 +116,10 @@ function ProblemRow({
 function SkeletonRow({ style }: { style: React.CSSProperties }) {
   return (
     <div style={style} className="flex items-center gap-4 pl-2 pr-4 border-b border-border/50">
-      <Skeleton className="h-3 w-8 shrink-0" />
-      <Skeleton className="h-3 flex-1 max-w-xs" />
-      <Skeleton className="h-3 w-24 hidden sm:block" />
-      <Skeleton className="h-3 w-12 shrink-0" />
+      <Skeleton className="h-5 rounded-sm w-8 shrink-0" />
+      <Skeleton className="h-5 rounded-sm flex-1" />
+      <Skeleton className="h-5 rounded-sm w-24 hidden sm:block" />
+      <Skeleton className="h-5 rounded-sm w-12 shrink-0" />
     </div>
   );
 }
@@ -191,7 +191,7 @@ function LoadMoreButton({
   return (
     <div
       className={cn(
-        "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300",
+        "fixed bottom-9.5 left-1/2 -translate-x-1/2 z-50 transition-all duration-300",
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
       )}
     >
@@ -342,7 +342,7 @@ export default function ProblemsPage() {
           <div className="relative flex-1 max-w-sm">
             <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Search questions…"
+              placeholder="Search Title (press Enter)"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={handleSearch}

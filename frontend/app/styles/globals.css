@@ -160,6 +160,27 @@ button[data-state="open"] .chevron {
   }
 }
 
+/* theme-image.module.css */
+.imgDark {
+  display: none;
+  width: 100%;
+  height: auto;
+}
+
+.imgLight {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+html.dark .imgLight {
+  display: none;
+}
+
+html.dark .imgDark {
+  display: block;
+}
+
 .animate-collapsible-down {
   animation: collapsible-down 0.3s ease-out;
 }

@@ -17,6 +17,7 @@ import Link from "next/link"
 import { useTheme } from "next-themes";
 import Image from "next/image";
 import { ModeToggle } from "@/components/ui/mode-toggle";
+import HeroPreview from "@/components/dashboard/hero-preview";
 
 const FEATURES = [
   {
@@ -134,7 +135,7 @@ export default function HomePage() {
       {/* ── Navbar ── */}
       <header
         className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${scrolled
-            ? "border border-b bg-[#09090b]/80 backdrop-blur-xl"
+            ? "border border-b backdrop-blur-xl"
             : "bg-transparent"
           }`}
       >
@@ -145,7 +146,7 @@ export default function HomePage() {
               R
             </div>
             <span className="font-semibold tracking-tight">
-              RemoteInterview
+              Remote Interview
             </span>
           </div>
 
@@ -188,7 +189,7 @@ export default function HomePage() {
             <div className="flex items-center justify-center gap-3">
               <Show when="signed-out">
                 <SignInButton>
-                  <Button size="lg">Start interviewing free</Button>
+                  <Button className="h-12 px-6">Start interviewing free</Button>
                 </SignInButton>
               </Show>
               <Show when="signed-in">
@@ -208,29 +209,7 @@ export default function HomePage() {
           </div>
 
           {/* Hero preview card */}
-            <p>{resolvedTheme}</p>
-          <div className="relative mx-auto mt-20 max-w-5xl">
-            {/* No gradient overlay */}
-            <div className="overflow-hidden rounded-2xl border border-muted shadow-2xl backdrop-blur-sm">
-              {resolvedTheme === "dark" ? (
-                <Image
-                  src="/hero-preview-dark.png"
-                  width={800}
-                  height={450}
-                  alt="Hero preview of the code editor and video call interface"
-                  className="h-auto w-full object-cover"
-                />
-              ) : (
-                <Image
-                  src="/hero-preview-light.png"
-                  width={800}
-                  height={450}
-                  alt="Hero preview of the code editor and video call interface"
-                  className="h-auto w-full object-cover"
-                />
-              )}
-            </div>
-          </div>
+          <HeroPreview/>
         </section>
 
         {/* ── Stats ── */}
