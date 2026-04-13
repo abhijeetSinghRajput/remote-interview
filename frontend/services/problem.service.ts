@@ -23,12 +23,12 @@ export const fetchProblemList = async (
     },
   });
 
-  return data.message;
+  return data.data;
 };
 
 export const fetchProblemDetail = async (
   slug: string
 ): Promise<ProblemDetail> => {
   const { data } = await api.get<ProblemDetailApiResponse>(`/problems/${slug}`);
-  return data.message.problem;
+  return data.data.problem;
 };

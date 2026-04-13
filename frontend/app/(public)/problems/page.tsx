@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchProblemList } from "@/services/problem.service";
-import { IconArrowDown, IconLoader, IconLockFilled, IconSearch, IconX } from "@tabler/icons-react";
+import { IconArrowDown, IconLoader, IconLockFilled, IconLockOpen2, IconSearch, IconX } from "@tabler/icons-react";
 import { ProblemListItem } from "@/types/problem";
 import FilterPopover, { Filters } from "@/components/problem/filter-popover";
 
@@ -69,9 +69,12 @@ function ProblemRow({
       {/* # */}
       <div className="flex gap-1">
         <div className="w-5 shrink-0 flex items-center justify-center">
-          {problem.isPaidOnly ? (
-            <IconLockFilled className="size-4 text-amber-600" />
-          ) : null}
+          {problem.isUnlocked ? (
+            <IconLockOpen2 className="size-4 text-amber-600" />
+          ) :
+            problem.isPaidOnly ? (
+              <IconLockFilled className="size-4 text-amber-600" />
+            ) : null}
         </div>
         <span className="w-7 shrink-0 text-xs text-muted-foreground/60 font-mono text-right">
           {problem.questionFrontendId}

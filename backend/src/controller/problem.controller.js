@@ -3,7 +3,7 @@ import Problem from "../models/Problem.model.js";
 import ProblemDetail from "../models/ProblemDetail.model.js";
 
 const DEFAULT_LIMIT = 100;
-const MAX_LIMIT     = 100;
+const MAX_LIMIT = 100;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -28,17 +28,17 @@ const normalizeDifficulty = (val) => {
 
 export const getProblems = async (req, res) => {
   try {
-    const limit      = Math.min(parsePositiveInt(req.query.limit, DEFAULT_LIMIT), MAX_LIMIT);
-    const skip       = parsePositiveInt(req.query.skip, 0) || 0;
-    const tags       = parseTags(req.query.tags);
+    const limit = Math.min(parsePositiveInt(req.query.limit, DEFAULT_LIMIT), MAX_LIMIT);
+    const skip = parsePositiveInt(req.query.skip, 0) || 0;
+    const tags = parseTags(req.query.tags);
     const difficulty = normalizeDifficulty(req.query.difficulty);
 
     // ── Filter ────────────────────────────────────────────────────────────────
-    const filter = {};
+    const filter = { isPaidOnly: true};
 
     if (difficulty) {
       if (!["Easy", "Medium", "Hard"].includes(difficulty)) {
-        return sendError(res, 400, "Invalid difficulty. Use: Easy | Medium | Hard");
+        return sendError(res, "Invalid difficulty. Use: Easy | Medium | Hard", 400);
       }
       filter.difficulty = difficulty;
     }
@@ -52,12 +52,13 @@ export const getProblems = async (req, res) => {
     const [problems, total] = await Promise.all([
       Problem.find(filter, {
         questionFrontendId: 1,
-        title:              1,
-        titleSlug:          1,
-        difficulty:         1,
-        topicTags:          1,
-        isPaidOnly:         1,
-        _id:                0,
+        title: 1,
+        titleSlug: 1,
+        difficulty: 1,
+        topicTags: 1,
+        isUnlocked: 1,
+        isPaidOnly: 1,
+        _id: 0,
       })
         .sort({ questionFrontendId: 1 })
         .skip(skip)
@@ -67,20 +68,20 @@ export const getProblems = async (req, res) => {
       Problem.countDocuments(filter),
     ]);
 
-    return sendSuccess(res, 200, {
+    return sendSuccess(res, {
       meta: {
         total,
         limit,
         skip,
         returned: problems.length,
-        hasMore:  skip + limit < total,
+        hasMore: skip + limit < total,
         nextSkip: skip + limit < total ? skip + limit : null,
       },
       problems,
     });
   } catch (error) {
     console.error("[getProblems]", error);
-    return sendError(res, 500, "Internal server error");
+    return sendError(res, "Internal server error", 500);
   }
 };
 
@@ -96,16 +97,16 @@ export const getProblemBySlug = async (req, res) => {
       .lean();
 
     if (!problem) {
-      return sendError(res, 404, `Problem "${slug}" not found`);
+      return sendError(res, `Problem "${slug}" not found`, 404);
     }
 
-    if (problem.isPaidOnly) {
-      return sendError(res, 403, "This problem is for premium subscribers only");
-    }
+    // if (problem.isPaidOnly) {
+    //   return sendError(res, "This problem is for premium subscribers only", 403);
+    // }
 
-    return sendSuccess(res, 200, { problem });
+    return sendSuccess(res, { problem });
   } catch (error) {
     console.error("[getProblemBySlug]", error);
-    return sendError(res, 500, "Internal server error");
+    return sendError(res, "Internal server error", 500);
   }
 };

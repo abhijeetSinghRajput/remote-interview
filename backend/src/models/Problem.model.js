@@ -35,9 +35,14 @@ const ProblemSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isUnlocked: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     topicTags: [TopicTagSchema],
   },
   { timestamps: true }
 );
 
-export default mongoose.model("Question", ProblemSchema);
+export default mongoose.model("Problem", ProblemSchema);

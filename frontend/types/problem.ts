@@ -31,6 +31,7 @@ export interface ProblemListItem {
   titleSlug: string;
   difficulty: ProblemDifficulty;
   isPaidOnly: boolean;
+  isUnlocked?: boolean;
   topicTags: ProblemTag[];
 }
 
@@ -63,7 +64,8 @@ export interface ProblemListResponse {
 export interface ApiResponse<T> {
   success: boolean;
   statusCode: number;
-  message: T;
+  message: string;
+  data: T;
 }
 
 export type ProblemListApiResponse = ApiResponse<ProblemListResponse>;
