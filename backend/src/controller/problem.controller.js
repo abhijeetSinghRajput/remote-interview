@@ -36,7 +36,7 @@ export const getProblems = async (req, res) => {
     const difficulty = normalizeDifficulty(req.query.difficulty);
     const search = req.query.search?.trim();
 
-    const filter = { isPaidOnly: true };
+    const filter = {};
 
     if (difficulty) {
       if (!["Easy", "Medium", "Hard"].includes(difficulty)) {
